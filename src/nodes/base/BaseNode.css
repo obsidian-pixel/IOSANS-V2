@@ -1,0 +1,284 @@
+/**
+ * BaseNode Component Styles
+ * Glassmorphism styling for the unified node wrapper.
+ * Part of IOSANS Sovereign Architecture.
+ */
+
+/* Base Node Container */
+.base-node {
+  position: relative;
+  min-width: 200px;
+  min-height: 80px;
+  padding: var(--space-4);
+  border-radius: var(--radius-lg);
+
+  /* Glassmorphism Effect */
+  background: rgba(22, 22, 31, 0.75);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+
+  /* Subtle shadow */
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+
+  transition: transform var(--transition-fast),
+    box-shadow var(--transition-fast), border-color var(--transition-fast);
+}
+
+.base-node:hover {
+  border-color: rgba(255, 255, 255, 0.15);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+.base-node--selected {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 2px var(--color-primary-muted),
+    0 8px 32px rgba(0, 0, 0, 0.4);
+}
+
+.base-node--running {
+  border-color: var(--color-secondary);
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+.base-node--success {
+  border-color: var(--color-success);
+}
+
+.base-node--error {
+  border-color: var(--color-error);
+}
+
+@keyframes pulse-glow {
+  0%,
+  100% {
+    box-shadow: 0 0 0 2px rgba(20, 184, 166, 0.2), 0 8px 32px rgba(0, 0, 0, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 0 4px rgba(20, 184, 166, 0.3), 0 8px 32px rgba(0, 0, 0, 0.4);
+  }
+}
+
+/* Node Header */
+.base-node__header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-bottom: var(--space-3);
+}
+
+.base-node__icon {
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--font-size-lg);
+}
+
+.base-node__title {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.base-node__type {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Node Content */
+.base-node__content {
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+}
+
+/* ============================================
+   Handle Styles
+   ============================================ */
+
+/* Base Handle */
+.handle {
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  background: var(--color-surface);
+  border: 2px solid var(--color-primary);
+  cursor: crosshair;
+  transition: transform var(--transition-fast),
+    background-color var(--transition-fast), border-color var(--transition-fast);
+  z-index: 10;
+}
+
+.handle:hover {
+  transform: scale(1.3);
+  background: var(--color-primary);
+}
+
+/* Circle Handle (Workflow) */
+.handle--circle {
+  border-radius: 50%;
+}
+
+/* Diamond Handle (Resource) */
+.handle--diamond {
+  border-radius: 2px;
+  transform: rotate(45deg);
+}
+
+.handle--diamond:hover {
+  transform: rotate(45deg) scale(1.3);
+}
+
+/* Handle Positions */
+.handle--left {
+  left: -6px;
+  top: 50%;
+  margin-top: -6px;
+}
+
+.handle--right {
+  right: -6px;
+  top: 50%;
+  margin-top: -6px;
+}
+
+.handle--top {
+  top: -6px;
+  left: 50%;
+  margin-left: -6px;
+}
+
+.handle--bottom {
+  bottom: -6px;
+  left: 50%;
+  margin-left: -6px;
+}
+
+/* Multi-handle positioning */
+.handle--top-0 {
+  left: 25%;
+  margin-left: -6px;
+}
+.handle--top-1 {
+  left: 50%;
+  margin-left: -6px;
+}
+.handle--top-2 {
+  left: 75%;
+  margin-left: -6px;
+}
+
+.handle--bottom-0 {
+  left: 25%;
+  margin-left: -6px;
+}
+.handle--bottom-1 {
+  left: 50%;
+  margin-left: -6px;
+}
+.handle--bottom-2 {
+  left: 75%;
+  margin-left: -6px;
+}
+
+/* Slot-specific colors */
+.handle--slot-tool {
+  border-color: var(--color-accent);
+}
+.handle--slot-tool:hover {
+  background: var(--color-accent);
+}
+
+.handle--slot-model {
+  border-color: var(--color-primary);
+}
+.handle--slot-model:hover {
+  background: var(--color-primary);
+}
+
+.handle--slot-memory {
+  border-color: var(--color-secondary);
+}
+.handle--slot-memory:hover {
+  background: var(--color-secondary);
+}
+
+.handle--slot-artifact {
+  border-color: var(--color-warning);
+}
+.handle--slot-artifact:hover {
+  background: var(--color-warning);
+}
+
+/* Handle Labels (tooltip on hover) */
+.handle__label {
+  position: absolute;
+  padding: var(--space-1) var(--space-2);
+  background: var(--color-surface);
+  border: 1px solid var(--color-surface-border);
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-xs);
+  color: var(--color-text-secondary);
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--transition-fast);
+  z-index: 100;
+}
+
+.handle:hover .handle__label {
+  opacity: 1;
+}
+
+.handle--left .handle__label {
+  right: 100%;
+  margin-right: var(--space-2);
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.handle--right .handle__label {
+  left: 100%;
+  margin-left: var(--space-2);
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.handle--top .handle__label {
+  bottom: 100%;
+  margin-bottom: var(--space-2);
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.handle--bottom .handle__label {
+  top: 100%;
+  margin-top: var(--space-2);
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+/* Slot indicators (icons next to handles) */
+.base-node__slots {
+  display: flex;
+  justify-content: center;
+  gap: var(--space-4);
+  position: absolute;
+  top: -24px;
+  left: 0;
+  right: 0;
+}
+
+.base-node__slot-indicator {
+  font-size: var(--font-size-xs);
+  opacity: 0.6;
+}

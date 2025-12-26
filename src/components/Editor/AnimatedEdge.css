@@ -1,0 +1,122 @@
+/**
+ * AnimatedEdge Component Styles
+ * Flowing edge animation using stroke-dasharray.
+ */
+
+.animated-edge {
+  pointer-events: none;
+}
+
+.animated-edge__path {
+  fill: none;
+  stroke: var(--color-primary);
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transition: stroke var(--transition-fast);
+}
+
+.animated-edge__path--animated {
+  animation: dash-flow 1.5s linear infinite;
+}
+
+.animated-edge__path--selected {
+  stroke: var(--color-primary-hover);
+  stroke-width: 3;
+}
+
+.animated-edge__path--running {
+  stroke: var(--color-secondary);
+  stroke-width: 2.5;
+  animation: dash-flow 0.8s linear infinite;
+}
+
+.animated-edge__path--success {
+  stroke: var(--color-success);
+}
+
+.animated-edge__path--error {
+  stroke: var(--color-error);
+}
+
+/* Resource edge styling */
+.animated-edge__path--resource {
+  stroke: var(--color-accent);
+  stroke-dasharray: 4 4;
+}
+
+.animated-edge__path--resource.animated-edge__path--animated {
+  animation: dash-flow-resource 2s linear infinite;
+}
+
+/* Flow animation */
+@keyframes dash-flow {
+  0% {
+    stroke-dashoffset: 24;
+  }
+  100% {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes dash-flow-resource {
+  0% {
+    stroke-dashoffset: 16;
+  }
+  100% {
+    stroke-dashoffset: 0;
+  }
+}
+
+/* Glow effect for active edges */
+.animated-edge__glow {
+  fill: none;
+  stroke: var(--color-primary);
+  stroke-width: 6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  opacity: 0;
+  filter: blur(4px);
+  transition: opacity var(--transition-fast);
+}
+
+.animated-edge--active .animated-edge__glow {
+  opacity: 0.3;
+  animation: pulse-opacity 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse-opacity {
+  0%,
+  100% {
+    opacity: 0.2;
+  }
+  50% {
+    opacity: 0.4;
+  }
+}
+
+/* Edge interaction zone */
+.animated-edge__hitzone {
+  fill: none;
+  stroke: transparent;
+  stroke-width: 16;
+  pointer-events: stroke;
+  cursor: pointer;
+}
+
+/* Arrow marker */
+.animated-edge__marker {
+  fill: var(--color-primary);
+}
+
+.animated-edge__marker--running {
+  fill: var(--color-secondary);
+}
+
+.animated-edge__marker--success {
+  fill: var(--color-success);
+}
+
+.animated-edge__marker--error {
+  fill: var(--color-error);
+}
