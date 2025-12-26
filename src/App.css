@@ -1,24 +1,36 @@
 /**
- * App Styles
- * Validation showcase for Components.
+ * IOSANS Dashboard Styles
  */
 
-.app-container {
-  min-height: 100vh;
-  padding: var(--space-8);
+.dashboard {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  background: linear-gradient(
-    135deg,
-    var(--color-background-primary) 0%,
-    var(--color-background-secondary) 50%,
-    var(--color-background-tertiary) 100%
-  );
+  width: 100vw;
+  height: 100vh;
+  background: var(--color-background-primary);
+  overflow: hidden;
 }
 
-.app-container h1 {
-  font-size: var(--font-size-3xl);
+/* Top Bar */
+.dashboard__topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 56px;
+  padding: 0 var(--space-4);
+  background: var(--color-surface);
+  border-bottom: 1px solid var(--color-surface-border);
+}
+
+.topbar__left {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.topbar__left h1 {
+  margin: 0;
+  font-size: var(--font-size-xl);
   background: linear-gradient(
     90deg,
     var(--color-primary),
@@ -27,93 +39,170 @@
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
-  margin-bottom: var(--space-2);
 }
 
-.app-container h2 {
-  font-size: var(--font-size-xl);
-  color: var(--color-text-secondary);
-  margin-bottom: var(--space-4);
-}
-
-.subtitle {
+.topbar__tag {
+  font-size: var(--font-size-xs);
   color: var(--color-text-muted);
-  margin-bottom: var(--space-8);
+  padding: 2px 8px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: var(--radius-sm);
 }
 
-/* Edge Showcase */
-.edge-showcase {
-  width: 100%;
-  max-width: 720px;
-  padding: var(--space-6);
-  margin-bottom: var(--space-8);
-  border-radius: var(--radius-lg);
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px solid var(--color-surface-border);
-}
-
-.edge-canvas {
-  width: 100%;
-  height: auto;
-  border-radius: var(--radius-md);
-  background: var(--color-background-secondary);
-}
-
-.edge-legend {
+.topbar__center {
   display: flex;
-  justify-content: center;
-  gap: var(--space-6);
-  margin-top: var(--space-4);
+  gap: var(--space-2);
+}
+
+.topbar__right {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.topbar__btn {
+  padding: var(--space-2) var(--space-4);
+  background: var(--color-background-secondary);
+  border: 1px solid var(--color-surface-border);
+  border-radius: var(--radius-md);
+  color: var(--color-text-primary);
   font-size: var(--font-size-sm);
-  color: var(--color-text-secondary);
+  cursor: pointer;
+  transition: all var(--transition-fast);
 }
 
-.legend-dot {
-  display: inline-block;
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-  margin-right: var(--space-2);
-  vertical-align: middle;
+.topbar__btn:hover {
+  background: var(--color-surface-hover);
+  border-color: var(--color-primary);
 }
 
-.legend-dot--animated {
-  background: var(--color-primary);
-}
-
-.legend-dot--running {
-  background: var(--color-secondary);
-}
-
-.legend-dot--success {
+.topbar__btn--run {
   background: var(--color-success);
+  border-color: var(--color-success);
+  color: white;
 }
 
-/* Node Showcase */
-.node-showcase {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: var(--space-10);
-  max-width: 1200px;
-  width: 100%;
-  padding: var(--space-8);
+.topbar__btn--run:hover {
+  background: var(--color-success-hover);
 }
 
-.node-demo {
+.topbar__btn--run.running {
+  background: var(--color-error);
+  border-color: var(--color-error);
+}
+
+/* Main Content */
+.dashboard__content {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+/* Canvas */
+.dashboard__canvas {
+  flex: 1;
+  position: relative;
+}
+
+/* Right Panel */
+.dashboard__panel {
+  width: 320px;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: var(--space-4);
-  padding: var(--space-8) var(--space-4);
-  border-radius: var(--radius-lg);
-  background: rgba(255, 255, 255, 0.02);
+  border-left: 1px solid var(--color-surface-border);
+  background: var(--color-surface);
+}
+
+.panel__tabs {
+  display: flex;
+  border-bottom: 1px solid var(--color-surface-border);
+}
+
+.panel__tabs button {
+  flex: 1;
+  padding: var(--space-3);
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.panel__tabs button:hover {
+  color: var(--color-text-primary);
+  background: var(--color-surface-hover);
+}
+
+.panel__tabs button.active {
+  color: var(--color-primary);
+  border-bottom-color: var(--color-primary);
+}
+
+.panel__content {
+  flex: 1;
+  overflow: hidden;
+}
+
+/* Context Menu */
+.context-menu {
+  position: fixed;
+  background: var(--color-surface);
+  border: 1px solid var(--color-surface-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+  z-index: 1000;
+  overflow: hidden;
+}
+
+.context-menu button {
+  display: block;
+  width: 100%;
+  padding: var(--space-2) var(--space-4);
+  background: none;
+  border: none;
+  color: var(--color-text-primary);
+  font-size: var(--font-size-sm);
+  text-align: left;
+  cursor: pointer;
+}
+
+.context-menu button:hover {
+  background: var(--color-surface-hover);
+}
+
+/* React Flow Overrides */
+.react-flow {
+  background: var(--color-background-primary) !important;
+}
+
+.react-flow__node {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+.react-flow__controls {
+  background: var(--color-surface);
+  border: 1px solid var(--color-surface-border);
+  border-radius: var(--radius-md);
+}
+
+.react-flow__controls-button {
+  background: var(--color-surface);
+  border-bottom: 1px solid var(--color-surface-border);
+  fill: var(--color-text-secondary);
+}
+
+.react-flow__controls-button:hover {
+  background: var(--color-surface-hover);
+}
+
+.react-flow__minimap {
+  border-radius: var(--radius-md);
   border: 1px solid var(--color-surface-border);
 }
 
-.node-demo h3 {
-  font-size: var(--font-size-sm);
-  font-weight: var(--font-weight-medium);
-  color: var(--color-text-secondary);
-  text-transform: uppercase;
-  letter-spacing: 1px;
+.react-flow__attribution {
+  display: none;
 }

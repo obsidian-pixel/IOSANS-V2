@@ -1,0 +1,111 @@
+/**
+ * NodeConfigPanel Styles
+ */
+
+.config-panel {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: var(--color-surface);
+}
+
+.config-panel__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-3) var(--space-4);
+  border-bottom: 1px solid var(--color-surface-border);
+}
+
+.config-panel__header h4 {
+  margin: 0;
+  font-size: var(--font-size-sm);
+  color: var(--color-text-primary);
+}
+
+.config-panel__id {
+  font-family: var(--font-family-mono);
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+}
+
+.config-panel__empty {
+  padding: var(--space-6);
+  text-align: center;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+}
+
+.config-panel__form {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--space-4);
+}
+
+.config-field {
+  margin-bottom: var(--space-4);
+}
+
+.config-field label {
+  display: block;
+  font-size: var(--font-size-xs);
+  color: var(--color-text-secondary);
+  margin-bottom: var(--space-1);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.config-field input[type="text"],
+.config-field input[type="url"],
+.config-field input[type="number"],
+.config-field select,
+.config-field textarea {
+  width: 100%;
+  padding: var(--space-2) var(--space-3);
+  background: var(--color-background-secondary);
+  border: 1px solid var(--color-surface-border);
+  border-radius: var(--radius-md);
+  color: var(--color-text-primary);
+  font-size: var(--font-size-sm);
+}
+
+.config-field textarea {
+  min-height: 80px;
+  resize: vertical;
+}
+
+.config-field textarea.code-input {
+  font-family: var(--font-family-mono);
+  font-size: var(--font-size-xs);
+  background: var(--color-background-tertiary);
+}
+
+.config-field input:focus,
+.config-field select:focus,
+.config-field textarea:focus {
+  outline: none;
+  border-color: var(--color-primary);
+}
+
+.config-field input[type="checkbox"] {
+  width: auto;
+  margin-right: var(--space-2);
+}
+
+.range-field {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.range-field input[type="range"] {
+  flex: 1;
+}
+
+.range-value {
+  min-width: 40px;
+  text-align: right;
+  font-family: var(--font-family-mono);
+  font-size: var(--font-size-sm);
+  color: var(--color-secondary);
+}
