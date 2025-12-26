@@ -1,0 +1,73 @@
+/**
+ * Logic Nodes Styles
+ */
+
+.logic-node {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  font-size: var(--font-size-xs);
+}
+
+.logic-node__condition {
+  padding: var(--space-2);
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: var(--radius-sm);
+  font-family: var(--font-family-mono);
+  color: var(--color-accent);
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.logic-node__branches {
+  display: flex;
+  gap: var(--space-3);
+}
+
+.logic-node__branch {
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-xs);
+}
+
+.logic-node__branch--true {
+  background: rgba(34, 197, 94, 0.2);
+  color: var(--color-success);
+}
+
+.logic-node__branch--false {
+  background: rgba(239, 68, 68, 0.2);
+  color: var(--color-error);
+}
+
+.logic-node__result {
+  color: var(--color-text-muted);
+  font-style: italic;
+}
+
+.logic-node__key {
+  color: var(--color-text-secondary);
+}
+
+.logic-node__cases {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+}
+
+.logic-node__case {
+  padding: 2px 6px;
+  background: rgba(99, 102, 241, 0.2);
+  border-radius: var(--radius-sm);
+  color: var(--color-primary);
+  font-family: var(--font-family-mono);
+}
+
+.logic-node__info {
+  color: var(--color-text-secondary);
+}
+
+.logic-node__branches-count {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-xs);
+}

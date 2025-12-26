@@ -1,0 +1,132 @@
+/**
+ * Privacy Monitor Styles
+ */
+
+.privacy-monitor {
+  position: fixed;
+  bottom: var(--space-4);
+  right: var(--space-4);
+  min-width: 200px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-surface-border);
+  border-radius: var(--radius-lg);
+  font-size: var(--font-size-sm);
+  z-index: 1000;
+  box-shadow: var(--shadow-lg);
+}
+
+.privacy-monitor__header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  cursor: pointer;
+  user-select: none;
+}
+
+.privacy-monitor__header:hover {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.privacy-monitor__icon {
+  font-size: var(--font-size-lg);
+}
+
+.privacy-monitor__title {
+  flex: 1;
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-primary);
+}
+
+.privacy-monitor__rate {
+  padding: 2px 8px;
+  border-radius: var(--radius-sm);
+  font-family: var(--font-family-mono);
+  font-size: var(--font-size-xs);
+  background: var(--color-success);
+  color: white;
+}
+
+.privacy-monitor__details {
+  border-top: 1px solid var(--color-surface-border);
+  padding: var(--space-3);
+}
+
+.privacy-monitor__stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-2);
+  margin-bottom: var(--space-3);
+}
+
+.privacy-monitor__stat {
+  text-align: center;
+}
+
+.stat-label {
+  display: block;
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+}
+
+.stat-value {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-text-primary);
+}
+
+.stat-value--success {
+  color: var(--color-success);
+}
+
+.stat-value--error {
+  color: var(--color-error);
+}
+
+.privacy-monitor__log {
+  border-top: 1px solid var(--color-surface-border);
+  padding-top: var(--space-2);
+}
+
+.privacy-monitor__log-title {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  margin-bottom: var(--space-2);
+}
+
+.privacy-monitor__empty {
+  color: var(--color-text-muted);
+  font-style: italic;
+  text-align: center;
+  padding: var(--space-2);
+}
+
+.privacy-monitor__entry {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-1) 0;
+  font-family: var(--font-family-mono);
+  font-size: var(--font-size-xs);
+}
+
+.privacy-monitor__entry.blocked {
+  color: var(--color-error);
+}
+
+.entry-method {
+  color: var(--color-primary);
+  font-weight: var(--font-weight-bold);
+}
+
+.entry-url {
+  flex: 1;
+  color: var(--color-text-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.entry-blocked {
+  color: var(--color-error);
+}

@@ -1,0 +1,81 @@
+/**
+ * Execution Controls Styles
+ */
+
+.execution-controls {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-3) var(--space-4);
+  background: var(--color-surface);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--color-surface-border);
+}
+
+.execution-controls__buttons {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.execution-controls__btn {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-4);
+  border: none;
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.execution-controls__btn--play {
+  background: var(--color-success);
+  color: white;
+}
+
+.execution-controls__btn--play:hover {
+  background: var(--color-success-hover);
+}
+
+.execution-controls__btn--pause {
+  background: var(--color-warning);
+  color: white;
+}
+
+.execution-controls__btn--stop {
+  background: var(--color-error);
+  color: white;
+}
+
+.execution-controls__btn--stop:hover {
+  background: var(--color-error-hover);
+}
+
+.execution-controls__status {
+  font-size: var(--font-size-sm);
+}
+
+.execution-controls__running {
+  color: var(--color-secondary);
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+.execution-controls__error {
+  color: var(--color-error);
+}
+
+.execution-controls__complete {
+  color: var(--color-success);
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.6;
+  }
+}
