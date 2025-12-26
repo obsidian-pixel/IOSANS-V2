@@ -147,6 +147,20 @@ export function findPath(
   // Create obstacle grid
   const costMap = createObstacleGrid(nodes, bounds, opts);
 
+  // Ensure start and end points (and immediate neighbors) are not blocked
+  // This allows the path to "escape" the source node and "enter" the target node
+  const clearStartEndZones = (cx, cy) => {
+    const range = 1; // 1 cell radius (3x3 area)
+    for (let x = cx - range; x <= cx + range; x++) {
+      for (let y = cy - range; y <= cy + range; y++) {
+        costMap.delete(`${x},${y}`);
+      }
+    }
+  };
+
+  clearStartEndZones(startX, startY);
+  clearStartEndZones(endX, endY);
+
   // A* data structures
   const openSet = new PriorityQueue();
   const cameFrom = new Map();

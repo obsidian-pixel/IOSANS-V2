@@ -4,10 +4,11 @@
  * Part of IOSANS Sovereign Architecture.
  */
 
-import React, { useCallback, useMemo } from "react";
+import React, { useCallback, useMemo, useState } from "react";
 import ReactFlow, {
   Background,
   Controls,
+  ControlButton,
   MiniMap,
   addEdge,
   useNodesState,
@@ -16,8 +17,7 @@ import ReactFlow, {
 import "reactflow/dist/style.css";
 
 import useWorkflowStore from "../../store/workflowStore.js";
-import ExecutionControls from "./ExecutionControls.jsx";
-import AnimatedEdge from "./AnimatedEdge.jsx";
+import AnimatedEdge, { EdgeMarkerDefs } from "./AnimatedEdge.jsx";
 
 // Node type imports
 import BaseNode from "../../nodes/base/BaseNode.jsx";
@@ -62,38 +62,21 @@ function WorkflowEditor({ services = {} }) {
   // Connect to store
   const storeNodes = useWorkflowStore((state) => state.nodes);
   const storeEdges = useWorkflowStore((state) => state.edges);
-  const setNodes = useWorkflowStore((state) => state.setNodes);
-  const setEdges = useWorkflowStore((state) => state.setEdges);
   const addNode = useWorkflowStore((state) => state.addNode);
 
   // React Flow state
-  const [nodes, setLocalNodes, onNodesChange] = useNodesState(storeNodes);
-  const [edges, setLocalEdges, onEdgesChange] = useEdgesState(storeEdges);
+  const [nodes, , onNodesChange] = useNodesState(storeNodes);
+  const [edges, setEdges, onEdgesChange] = useEdgesState(storeEdges);
+  const [isDebug, setIsDebug] = useState(false);
 
-  // Sync to store
-  const handleNodesChange = useCallback(
-    (changes) => {
-      onNodesChange(changes);
-      // Debounced store update would go here
-    },
-    [onNodesChange]
-  );
-
-  const handleEdgesChange = useCallback(
-    (changes) => {
-      onEdgesChange(changes);
-    },
-    [onEdgesChange]
-  );
-
+  // Handlers
   const onConnect = useCallback(
     (params) => {
-      setLocalEdges((eds) => addEdge({ ...params, type: "animated" }, eds));
+      setEdges((eds) => addEdge({ ...params, type: "animated" }, eds));
     },
-    [setLocalEdges]
+    [setEdges]
   );
 
-  // Drag and drop handler
   const onDragOver = useCallback((event) => {
     event.preventDefault();
     event.dataTransfer.dropEffect = "move";
@@ -102,7 +85,6 @@ function WorkflowEditor({ services = {} }) {
   const onDrop = useCallback(
     (event) => {
       event.preventDefault();
-
       const type = event.dataTransfer.getData("application/reactflow");
       if (!type) return;
 
@@ -120,6 +102,24 @@ function WorkflowEditor({ services = {} }) {
     [addNode]
   );
 
+  const handleRun = () => {
+    console.log("Executing workflow...");
+    // Trigger execution logic here
+    if (services.executor) {
+      services.executor.execute(nodes, edges);
+    }
+  };
+
+  const handleLayout = () => {
+    console.log("Auto-layout triggered");
+    // Layout logic would go here (e.g., dagre)
+  };
+
+  const handleDebug = () => {
+    setIsDebug(!isDebug);
+    console.log("Debug mode:", !isDebug);
+  };
+
   // Default edge options
   const defaultEdgeOptions = useMemo(
     () => ({
@@ -130,17 +130,13 @@ function WorkflowEditor({ services = {} }) {
   );
 
   return (
-    <div className="workflow-editor">
-      <div className="workflow-editor__toolbar">
-        <ExecutionControls services={services} />
-      </div>
-
+    <div className={`workflow-editor ${isDebug ? "debug-mode" : ""}`}>
       <div className="workflow-editor__canvas">
         <ReactFlow
           nodes={nodes}
           edges={edges}
-          onNodesChange={handleNodesChange}
-          onEdgesChange={handleEdgesChange}
+          onNodesChange={onNodesChange}
+          onEdgesChange={onEdgesChange}
           onConnect={onConnect}
           onDragOver={onDragOver}
           onDrop={onDrop}
@@ -157,7 +153,28 @@ function WorkflowEditor({ services = {} }) {
             size={1}
             color="rgba(255,255,255,0.1)"
           />
-          <Controls />
+
+          {/* Custom Controls replacing standard Controls */}
+          <Controls>
+            <ControlButton
+              onClick={handleRun}
+              title="Run"
+              style={{ color: "var(--color-success)" }}
+            >
+              ▶
+            </ControlButton>
+            <ControlButton onClick={handleLayout} title="Layout">
+              ⬡
+            </ControlButton>
+            <ControlButton
+              onClick={handleDebug}
+              title="Debug Mode"
+              style={{ color: isDebug ? "var(--color-warning)" : "inherit" }}
+            >
+              🐛
+            </ControlButton>
+          </Controls>
+
           <MiniMap
             nodeColor={(node) => {
               switch (node.type) {
@@ -178,6 +195,9 @@ function WorkflowEditor({ services = {} }) {
             }}
             style={{ background: "rgba(0,0,0,0.5)" }}
           />
+
+          {/* SVG Definitions for Markers */}
+          <EdgeMarkerDefs />
         </ReactFlow>
       </div>
     </div>

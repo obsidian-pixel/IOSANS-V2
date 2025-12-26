@@ -47,6 +47,7 @@ import {
   HTTPRequestNode,
 } from "./nodes/actions/ActionNodes.jsx";
 import OutputNode from "./nodes/output/OutputNode.jsx";
+import CustomEdge, { EdgeMarkerDefs } from "./components/Editor/CustomEdge.jsx";
 
 import "./App.css";
 
@@ -72,7 +73,10 @@ const nodeTypes = {
 };
 
 // Edge types (defined outside component)
-const edgeTypes = {};
+const edgeTypes = {
+  default: CustomEdge,
+  custom: CustomEdge,
+};
 
 // Dagre layout config
 const dagreGraph = new dagre.graphlib.Graph();
@@ -369,6 +373,10 @@ function Dashboard() {
             nodeTypes={nodeTypes}
             edgeTypes={edgeTypes}
             fitView
+            fitViewOptions={{ padding: 0.5, maxZoom: 0.65 }}
+            minZoom={0.2}
+            maxZoom={2}
+            defaultViewport={{ x: 0, y: 0, zoom: 0.65 }}
             snapToGrid
             snapGrid={[10, 10]}
           >
@@ -378,6 +386,7 @@ function Dashboard() {
               size={1}
               color="rgba(255,255,255,0.08)"
             />
+            <EdgeMarkerDefs />
             <Controls />
             <MiniMap
               nodeColor={(node) => {

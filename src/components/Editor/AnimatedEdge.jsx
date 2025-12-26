@@ -35,16 +35,31 @@ function AnimatedEdge({
 }) {
   // Generate smart routed path
   const pathD = useMemo(() => {
-    if (!sourcePosition || !targetPosition) return "";
+    if (!sourcePosition || !targetPosition) {
+      console.warn("AnimatedEdge: Missing positions", {
+        sourcePosition,
+        targetPosition,
+      });
+      return "";
+    }
 
-    return getSmartPath(sourcePosition, targetPosition, nodes, {
+    const path = getSmartPath(sourcePosition, targetPosition, nodes, {
       gridSize: 10,
       turnPenalty: 15,
       bufferZoneCost: 50,
       bufferZoneSize: 3,
       cornerRadius: 15,
     });
-  }, [sourcePosition, targetPosition, nodes]);
+
+    console.log("AnimatedEdge Path:", {
+      id,
+      sourcePosition,
+      targetPosition,
+      nodesCount: nodes.length,
+      path,
+    });
+    return path;
+  }, [id, sourcePosition, targetPosition, nodes]);
 
   // Build class names
   const pathClasses = [
