@@ -7,7 +7,10 @@
 import React, { useState, useEffect } from "react";
 import PropTypes from "prop-types";
 import BaseNode from "../base/BaseNode.jsx";
-import { getArtifact } from "../../utils/artifactStorage.js";
+import {
+  getArtifactUrl,
+  revokeArtifactUrl,
+} from "../../utils/artifactStorage.js";
 import "./OutputNode.css";
 
 /**
@@ -39,18 +42,15 @@ function OutputNode({ id, data = {}, selected = false, status = "idle" }) {
   useEffect(() => {
     if (isArtifact) {
       setLoading(true);
-      getArtifact(value.artifactId)
-        .then((artifact) => {
-          if (artifact?.blob) {
-            const url = URL.createObjectURL(artifact.blob);
-            setBlobUrl(url);
-          }
+      getArtifactUrl(value.artifactId)
+        .then((url) => {
+          setBlobUrl(url);
         })
         .catch(console.error)
         .finally(() => setLoading(false));
 
       return () => {
-        if (blobUrl) URL.revokeObjectURL(blobUrl);
+        if (blobUrl) revokeArtifactUrl(blobUrl);
       };
     }
   }, [value?.artifactId]);
@@ -65,21 +65,48 @@ function OutputNode({ id, data = {}, selected = false, status = "idle" }) {
 
       if (type.startsWith("audio")) {
         return (
-          <audio controls className="output-node__audio" src={blobUrl}>
-            Audio not supported
-          </audio>
+          <div className="output-node__media-wrapper">
+            <audio controls className="output-node__audio" src={blobUrl}>
+              Audio not supported
+            </audio>
+            <div className="output-node__meta">Audio: {type}</div>
+          </div>
         );
       }
 
       if (type.startsWith("image")) {
         return (
-          <img className="output-node__image" src={blobUrl} alt="Generated" />
+          <div className="output-node__media-wrapper">
+            <a href={blobUrl} target="_blank" rel="noopener noreferrer">
+              <img
+                className="output-node__image"
+                src={blobUrl}
+                alt="Generated Artifact"
+              />
+            </a>
+            <div className="output-node__meta">Image: {type}</div>
+          </div>
         );
       }
 
       return (
         <div className="output-node__artifact">
-          📎 {value.artifactId.slice(0, 8)}... ({type})
+          <span className="output-node__icon">📎</span>
+          <div className="output-node__details">
+            <div className="output-node__filename">
+              Artifact: {value.artifactId.slice(0, 8)}...
+            </div>
+            <div className="output-node__filetype">{type}</div>
+            <a
+              href={blobUrl}
+              download={`artifact-${value.artifactId}.${
+                type.split("/")[1] || "bin"
+              }`}
+              className="output-node__download"
+            >
+              Download
+            </a>
+          </div>
         </div>
       );
     }
@@ -87,7 +114,7 @@ function OutputNode({ id, data = {}, selected = false, status = "idle" }) {
     switch (detectedType) {
       case "text":
         return (
-          <div className="output-node__text">{String(value).slice(0, 200)}</div>
+          <div className="output-node__text">{String(value).slice(0, 500)}</div>
         );
       case "number":
         return <div className="output-node__number">{value}</div>;
@@ -98,11 +125,18 @@ function OutputNode({ id, data = {}, selected = false, status = "idle" }) {
           </div>
         );
       case "array":
-        return <div className="output-node__json">[{value.length} items]</div>;
+        return (
+          <div className="output-node__json">
+            <pre>{JSON.stringify(value, null, 2).slice(0, 200)}</pre>
+            {value.length > 0 && (
+              <div className="output-node__meta">{value.length} items</div>
+            )}
+          </div>
+        );
       case "object":
         return (
           <div className="output-node__json">
-            {JSON.stringify(value, null, 2).slice(0, 100)}
+            <pre>{JSON.stringify(value, null, 2).slice(0, 300)}</pre>
           </div>
         );
       case "empty":
@@ -125,7 +159,9 @@ function OutputNode({ id, data = {}, selected = false, status = "idle" }) {
       hasWorkflowOutput={false}
     >
       <div className="output-node">
-        <div className="output-node__type">Type: {detectedType}</div>
+        <div className="output-node__header">
+          <span className="output-node__badge">{detectedType}</span>
+        </div>
         <div className="output-node__content">{renderContent()}</div>
       </div>
     </BaseNode>

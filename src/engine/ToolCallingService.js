@@ -49,8 +49,16 @@ class ToolCallingService {
    * Sets available tools
    * @param {Array} tools - Tool schemas
    */
-  setTools(tools) {
+  /**
+   * Sets available tools and their node mappings
+   * @param {Array} tools - Tool schemas
+   * @param {Map<string, string>} toolNodeMap - Map of tool name to node ID
+   * @param {Function} executeNodeCallback - Callback to execute a node by ID
+   */
+  setTools(tools, toolNodeMap, executeNodeCallback) {
     this.tools = tools;
+    this.toolNodeMap = toolNodeMap || new Map();
+    this.executeNodeCallback = executeNodeCallback;
   }
 
   /**
@@ -61,155 +69,32 @@ class ToolCallingService {
     this.services = services;
   }
 
-  /**
-   * Runs the ReAct loop
-   * @param {string} userMessage - Initial user message
-   * @param {ReActConfig} config
-   * @returns {Promise<{answer: string, steps: ReActStep[]}>}
-   */
-  async runReActLoop(userMessage, config = {}) {
-    const opts = { ...DEFAULT_CONFIG, ...config };
-    const steps = [];
-
-    // Generate system prompt with tools
-    const systemPrompt = generateToolSystemPrompt(this.tools);
-
-    // Build conversation history
-    const messages = [
-      { role: "system", content: systemPrompt },
-      { role: "user", content: userMessage },
-    ];
-
-    for (let i = 0; i < opts.maxIterations; i++) {
-      // Generate LLM response
-      const response = await this.webLLM.generate(messages, {
-        temperature: 0.7,
-        max_tokens: 1024,
-      });
-
-      const assistantMessage = response.content || response;
-      messages.push({ role: "assistant", content: assistantMessage });
-
-      if (opts.verbose) {
-        console.log(`[ReAct] Iteration ${i + 1}:`, assistantMessage);
-      }
-
-      // Parse response
-      const parsed = this._parseResponse(assistantMessage);
-
-      // Record thought
-      if (parsed.thought) {
-        const thoughtStep = { type: "thought", content: parsed.thought };
-        steps.push(thoughtStep);
-        opts.onStep?.(thoughtStep);
-      }
-
-      // Check for final answer
-      if (parsed.finalAnswer) {
-        const answerStep = { type: "answer", content: parsed.finalAnswer };
-        steps.push(answerStep);
-        opts.onStep?.(answerStep);
-        return { answer: parsed.finalAnswer, steps };
-      }
-
-      // Execute tool if action requested
-      if (parsed.action) {
-        const actionStep = {
-          type: "action",
-          content: `${parsed.action}: ${JSON.stringify(parsed.actionInput)}`,
-          toolCall: {
-            name: parsed.action,
-            arguments: parsed.actionInput,
-          },
-        };
-        steps.push(actionStep);
-        opts.onStep?.(actionStep);
-
-        // Execute the tool
-        const observation = await this._executeTool(
-          parsed.action,
-          parsed.actionInput
-        );
-
-        const observationStep = {
-          type: "observation",
-          content: this._formatObservation(observation),
-          result: observation,
-        };
-        steps.push(observationStep);
-        opts.onStep?.(observationStep);
-
-        // Add observation to conversation
-        messages.push({
-          role: "user",
-          content: `Observation: ${observationStep.content}`,
-        });
-      } else if (!parsed.finalAnswer && !parsed.action) {
-        // No action or answer - prompt for completion
-        messages.push({
-          role: "user",
-          content: "Please provide either an Action or Final Answer.",
-        });
-      }
-    }
-
-    // Max iterations reached
-    return {
-      answer: "Maximum iterations reached without final answer.",
-      steps,
-    };
-  }
-
-  /**
-   * Parses LLM response for ReAct components
-   * @private
-   */
-  _parseResponse(response) {
-    const result = {
-      thought: null,
-      action: null,
-      actionInput: null,
-      finalAnswer: null,
-    };
-
-    // Extract thought
-    const thoughtMatch = response.match(PATTERNS.THOUGHT);
-    if (thoughtMatch) {
-      result.thought = thoughtMatch[1].trim();
-    }
-
-    // Check for final answer
-    const finalMatch = response.match(PATTERNS.FINAL_ANSWER);
-    if (finalMatch) {
-      result.finalAnswer = finalMatch[1].trim();
-      return result;
-    }
-
-    // Check for action
-    const actionMatch = response.match(PATTERNS.ACTION);
-    if (actionMatch) {
-      result.action = actionMatch[1].trim();
-
-      // Parse action input
-      const inputMatch = response.match(PATTERNS.ACTION_INPUT);
-      if (inputMatch) {
-        try {
-          result.actionInput = JSON.parse(inputMatch[1].trim());
-        } catch {
-          // Try to parse as simple string
-          result.actionInput = { input: inputMatch[1].trim() };
-        }
-      }
-    }
-
-    return result;
-  }
+  // ...
 
   /**
    * Executes a tool and returns the result
    * @private
    */
   async _executeTool(toolName, toolInput) {
+    // 1. Check if it's a connected Tool Node
+    if (this.toolNodeMap && this.toolNodeMap.has(toolName)) {
+      const nodeId = this.toolNodeMap.get(toolName);
+      if (this.executeNodeCallback) {
+        try {
+          console.log(
+            `[ToolCalling] Executing node tool: ${toolName} (${nodeId})`
+          );
+          // Execute the node. We assume executeNodeCallback handles result extraction.
+          // We pass 'toolInput' as if it came from the workflow or merged with config.
+          const result = await this.executeNodeCallback(nodeId, toolInput);
+          return result;
+        } catch (err) {
+          return { error: `Tool execution failed: ${err.message}` };
+        }
+      }
+    }
+
+    // 2. Check for built-in/registered executors (legacy/direct)
     const executor = getExecutor(toolName);
 
     if (!executor) {
@@ -232,30 +117,7 @@ class ToolCallingService {
     }
   }
 
-  /**
-   * Formats observation for LLM consumption
-   * Injects artifactId for binary outputs
-   * @private
-   */
-  _formatObservation(result) {
-    if (result.error) {
-      return `Error: ${result.error}`;
-    }
-
-    const output = result.output;
-
-    // Check for artifact reference
-    if (output && output.artifactId) {
-      return `Success. Artifact created: ${output.artifactId} (type: ${output.type})`;
-    }
-
-    // Format complex objects
-    if (typeof output === "object") {
-      return JSON.stringify(output, null, 2);
-    }
-
-    return String(output);
-  }
+  // ...
 
   /**
    * Runs a single tool directly (for ExecutionEngine integration)
@@ -265,6 +127,140 @@ class ToolCallingService {
    */
   async runTool(toolName, toolInput) {
     return this._executeTool(toolName, toolInput);
+  }
+
+  /**
+   * Main ReAct Loop
+   * @param {string} userPrompt
+   * @param {ReActConfig} config
+   */
+  async runReActLoop(userPrompt, config = {}) {
+    const { maxIterations = DEFAULT_CONFIG.maxIterations, onStep } = config;
+
+    // Initialize prompt with system instruction
+    const systemPrompt = generateToolSystemPrompt(this.tools);
+    let currentScratchpad = `Question: ${userPrompt}\nThought: `;
+
+    const steps = [];
+
+    for (let i = 0; i < maxIterations; i++) {
+      const messages = [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: currentScratchpad },
+      ];
+
+      // Assuming webLLM.chat(messages) returns just the string content
+      let response = "";
+      try {
+        if (this.webLLM.chat) {
+          response = await this.webLLM.chat(messages);
+        } else if (this.webLLM.generate) {
+          // Fallback if chat not available
+          response = await this.webLLM.generate(
+            systemPrompt + "\n\n" + currentScratchpad
+          );
+        } else {
+          throw new Error("WebLLM service has no chat or generate method");
+        }
+
+        if (typeof response !== "string") {
+          // If response object, try to extract content
+          response =
+            response.content || response.message || JSON.stringify(response);
+        }
+      } catch (e) {
+        console.error("LLM Error:", e);
+        throw new Error(`LLM Generation failed: ${e.message}`);
+      }
+
+      // Cleanup response (trim)
+      response = response.trim();
+      currentScratchpad += response + "\n";
+
+      // Parse
+      const step = this._parseReActResponse(response);
+      steps.push(step);
+      onStep?.(step);
+
+      if (step.type === "answer") {
+        return { answer: step.content, steps };
+      }
+
+      if (step.type === "action") {
+        const { name, input } = step.toolCall;
+
+        // Execute Tool
+        let observation;
+        try {
+          const result = await this._executeTool(name, input);
+          observation =
+            typeof result === "string" ? result : JSON.stringify(result);
+        } catch (err) {
+          observation = `Error: ${err.message}`;
+        }
+
+        const obsText = `Observation: ${observation}`;
+        currentScratchpad += obsText + "\nThought:"; // Next iteration expects prompt ending in Thought:
+
+        // Push observation step
+        const obsStep = {
+          type: "observation",
+          content: obsText,
+          result: observation,
+        };
+        steps.push(obsStep);
+        onStep?.(obsStep);
+      } else {
+        // Just thought, continue
+        currentScratchpad += "Thought:";
+      }
+    }
+
+    return { answer: "Max iterations reached.", steps };
+  }
+
+  /**
+   * Parses LLM output for ReAct patterns
+   * @param {string} text
+   * @returns {ReActStep}
+   */
+  _parseReActResponse(text) {
+    // 1. Check Final Answer
+    const finalMatch = text.match(PATTERNS.FINAL_ANSWER);
+    if (finalMatch) {
+      return { type: "answer", content: finalMatch[1].trim() };
+    }
+
+    // 2. Check Action
+    const actionMatch = text.match(PATTERNS.ACTION);
+    if (actionMatch) {
+      const toolName = actionMatch[1].trim();
+      const inputMatch = text.match(PATTERNS.ACTION_INPUT);
+      let toolInput = {};
+
+      if (inputMatch) {
+        try {
+          // Try JSON parse first
+          toolInput = JSON.parse(inputMatch[1].trim());
+        } catch {
+          // Fallback to string if strictly text input
+          toolInput = inputMatch[1].trim();
+        }
+      }
+
+      return {
+        type: "action",
+        content: text,
+        toolCall: { name: toolName, input: toolInput },
+      };
+    }
+
+    // 3. Default to Thought
+    // If we have Thought: prefix, strip it for cleaner content
+    const thoughtMatch = text.match(PATTERNS.THOUGHT);
+    const content = thoughtMatch ? thoughtMatch[1].trim() : text;
+
+    return { type: "thought", content };
   }
 }
 

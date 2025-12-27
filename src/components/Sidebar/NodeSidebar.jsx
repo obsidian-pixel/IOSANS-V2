@@ -7,6 +7,8 @@
 import React, { useState } from "react";
 import PropTypes from "prop-types";
 import "./NodeSidebar.css";
+import { TemplatesPanel } from "./TemplatesPanel.jsx";
+import { DocsPanel } from "./DocsPanel.jsx";
 
 // Node categories with their types
 const NODE_CATEGORIES = {
@@ -66,6 +68,7 @@ function NodeSidebar({ collapsed = false, onToggle }) {
     Object.keys(NODE_CATEGORIES)
   );
   const [searchTerm, setSearchTerm] = useState("");
+  const [activeTab, setActiveTab] = useState("nodes"); // nodes | templates | docs
 
   const toggleCategory = (category) => {
     setExpandedCategories((prev) =>
@@ -114,53 +117,84 @@ function NodeSidebar({ collapsed = false, onToggle }) {
   return (
     <div className="node-sidebar">
       <div className="node-sidebar__header">
-        <h3>Nodes</h3>
+        <div className="sidebar-tabs">
+          <button
+            className={`tab-btn ${activeTab === "nodes" ? "active" : ""}`}
+            onClick={() => setActiveTab("nodes")}
+            title="Nodes"
+          >
+            🧩
+          </button>
+          <button
+            className={`tab-btn ${activeTab === "templates" ? "active" : ""}`}
+            onClick={() => setActiveTab("templates")}
+            title="Templates"
+          >
+            📑
+          </button>
+          <button
+            className={`tab-btn ${activeTab === "docs" ? "active" : ""}`}
+            onClick={() => setActiveTab("docs")}
+            title="Documentation"
+          >
+            📚
+          </button>
+        </div>
         <button className="node-sidebar__toggle" onClick={onToggle}>
           ✕
         </button>
       </div>
 
-      <div className="node-sidebar__search">
-        <input
-          type="text"
-          placeholder="Search nodes..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-        />
-      </div>
-
-      <div className="node-sidebar__categories">
-        {Object.entries(filteredCategories).map(([key, category]) => (
-          <div key={key} className="node-sidebar__category">
-            <div
-              className="node-sidebar__category-header"
-              onClick={() => toggleCategory(key)}
-            >
-              <span className="category-icon">{category.icon}</span>
-              <span className="category-label">{category.label}</span>
-              <span className="category-chevron">
-                {expandedCategories.includes(key) ? "▼" : "▶"}
-              </span>
-            </div>
-
-            {expandedCategories.includes(key) && (
-              <div className="node-sidebar__nodes">
-                {category.nodes.map((node) => (
-                  <div
-                    key={node.type}
-                    className="node-sidebar__node"
-                    draggable
-                    onDragStart={(e) => onDragStart(e, node.type, node.label)}
-                  >
-                    <span className="node-icon">{node.icon}</span>
-                    <span className="node-label">{node.label}</span>
-                  </div>
-                ))}
-              </div>
-            )}
+      {activeTab === "nodes" && (
+        <>
+          <div className="node-sidebar__search">
+            <input
+              type="text"
+              placeholder="Search nodes..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
           </div>
-        ))}
-      </div>
+
+          <div className="node-sidebar__categories">
+            {Object.entries(filteredCategories).map(([key, category]) => (
+              <div key={key} className="node-sidebar__category">
+                <div
+                  className="node-sidebar__category-header"
+                  onClick={() => toggleCategory(key)}
+                >
+                  <span className="category-icon">{category.icon}</span>
+                  <span className="category-label">{category.label}</span>
+                  <span className="category-chevron">
+                    {expandedCategories.includes(key) ? "▼" : "▶"}
+                  </span>
+                </div>
+
+                {expandedCategories.includes(key) && (
+                  <div className="node-sidebar__nodes">
+                    {category.nodes.map((node) => (
+                      <div
+                        key={node.type}
+                        className="node-sidebar__node"
+                        draggable
+                        onDragStart={(e) =>
+                          onDragStart(e, node.type, node.label)
+                        }
+                      >
+                        <span className="node-icon">{node.icon}</span>
+                        <span className="node-label">{node.label}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </>
+      )}
+
+      {activeTab === "templates" && <TemplatesPanel />}
+      {activeTab === "docs" && <DocsPanel />}
     </div>
   );
 }

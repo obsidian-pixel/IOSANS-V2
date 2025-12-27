@@ -1,6 +1,6 @@
 /**
  * Action Nodes
- * CodeExecutor and HTTPRequest nodes.
+ * Code Execution, HTTP Requests, etc.
  * Part of IOSANS Sovereign Architecture.
  */
 
@@ -10,7 +10,7 @@ import BaseNode from "../base/BaseNode.jsx";
 import "./ActionNodes.css";
 
 /**
- * CodeExecutorNode - Sandboxed JavaScript execution
+ * CodeExecutorNode - JavaScript Sandbox
  */
 export function CodeExecutorNode({
   id,
@@ -18,7 +18,7 @@ export function CodeExecutorNode({
   selected = false,
   status = "idle",
 }) {
-  const { code = "", language = "javascript" } = data;
+  const { language = "javascript" } = data;
 
   return (
     <BaseNode
@@ -33,12 +33,8 @@ export function CodeExecutorNode({
       hasWorkflowOutput={true}
     >
       <div className="action-node">
-        <div className="action-node__lang">{language}</div>
-        <div className="action-node__preview">
-          <code>
-            {code.slice(0, 60) || "// No code"}
-            {code.length > 60 ? "..." : ""}
-          </code>
+        <div className="action-node__info">
+          <span className="action-node__lang">{language}</span>
         </div>
       </div>
     </BaseNode>
@@ -53,7 +49,7 @@ CodeExecutorNode.propTypes = {
 };
 
 /**
- * HTTPRequestNode - Makes HTTP requests
+ * HTTPRequestNode - External API Calls
  */
 export function HTTPRequestNode({
   id,
@@ -61,12 +57,12 @@ export function HTTPRequestNode({
   selected = false,
   status = "idle",
 }) {
-  const { method = "GET", url = "", headers = {} } = data;
+  const { method = "GET", url = "" } = data;
 
   return (
     <BaseNode
       id={id}
-      title={data.label || "HTTP"}
+      title={data.label || "HTTP Request"}
       type="action"
       icon="🌐"
       slots={[]}
@@ -76,13 +72,13 @@ export function HTTPRequestNode({
       hasWorkflowOutput={true}
     >
       <div className="action-node">
-        <div className="action-node__method">{method}</div>
-        <div className="action-node__url">
-          {url.slice(0, 40) || "No URL"}
-          {url.length > 40 ? "..." : ""}
-        </div>
-        <div className="action-node__headers">
-          {Object.keys(headers).length} headers
+        <div className="action-node__info">
+          <span className={`action-node__method ${method?.toLowerCase()}`}>
+            {method}
+          </span>
+          <span className="action-node__url" title={url}>
+            {url || "https://..."}
+          </span>
         </div>
       </div>
     </BaseNode>
@@ -90,6 +86,45 @@ export function HTTPRequestNode({
 }
 
 HTTPRequestNode.propTypes = {
+  id: PropTypes.string.isRequired,
+  data: PropTypes.object,
+  selected: PropTypes.bool,
+  status: PropTypes.string,
+};
+
+/**
+ * TransformNode - Data Transformation
+ */
+export function TransformNode({
+  id,
+  data = {},
+  selected = false,
+  status = "idle",
+}) {
+  const { transformType = "json-parse" } = data;
+
+  return (
+    <BaseNode
+      id={id}
+      title={data.label || "Transform"}
+      type="action"
+      icon="🔄"
+      slots={[]}
+      selected={selected}
+      status={status}
+      hasWorkflowInput={true}
+      hasWorkflowOutput={true}
+    >
+      <div className="action-node">
+        <div className="action-node__info">
+          <span style={{ opacity: 0.7 }}>Op:</span> {transformType}
+        </div>
+      </div>
+    </BaseNode>
+  );
+}
+
+TransformNode.propTypes = {
   id: PropTypes.string.isRequired,
   data: PropTypes.object,
   selected: PropTypes.bool,

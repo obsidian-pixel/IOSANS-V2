@@ -23,6 +23,7 @@ const useExecutionStore = create((set, get) => ({
   currentNodeId: null,
   nodeResults: new Map(),
   edgeSnapshots: new Map(),
+  logs: [],
   executionOrder: [],
   executionStartTime: null,
   executionEndTime: null,
@@ -35,6 +36,7 @@ const useExecutionStore = create((set, get) => ({
       currentNodeId: null,
       nodeResults: new Map(),
       edgeSnapshots: new Map(),
+      logs: [],
       executionOrder: nodeOrder,
       executionStartTime: Date.now(),
       executionEndTime: null,
@@ -51,6 +53,21 @@ const useExecutionStore = create((set, get) => ({
   pauseExecution: () => set({ isPaused: true }),
 
   resumeExecution: () => set({ isPaused: false }),
+
+  // Log Actions
+  addLog: (log) =>
+    set((state) => ({
+      logs: [
+        ...state.logs,
+        {
+          id: Math.random().toString(36).substr(2, 9),
+          timestamp: Date.now(),
+          ...log,
+        },
+      ],
+    })),
+
+  clearLogs: () => set({ logs: [] }),
 
   // Node Result Actions
   setNodePending: (nodeId) =>

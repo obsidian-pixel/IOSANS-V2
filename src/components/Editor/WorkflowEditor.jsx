@@ -68,6 +68,7 @@ function WorkflowEditor({ services = {} }) {
   const [nodes, , onNodesChange] = useNodesState(storeNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(storeEdges);
   const [isDebug, setIsDebug] = useState(false);
+  const [showMiniMap, setShowMiniMap] = useState(true);
 
   // Handlers
   const onConnect = useCallback(
@@ -118,6 +119,10 @@ function WorkflowEditor({ services = {} }) {
   const handleDebug = () => {
     setIsDebug(!isDebug);
     console.log("Debug mode:", !isDebug);
+  };
+
+  const toggleMiniMap = () => {
+    setShowMiniMap((prev) => !prev);
   };
 
   // Default edge options
@@ -175,26 +180,43 @@ function WorkflowEditor({ services = {} }) {
             </ControlButton>
           </Controls>
 
-          <MiniMap
-            nodeColor={(node) => {
-              switch (node.type) {
-                case "aiAgent":
-                  return "#6366f1";
-                case "manualTrigger":
-                case "scheduleTrigger":
-                  return "#22c55e";
-                case "ifElse":
-                case "switch":
-                case "merge":
-                  return "#f59e0b";
-                case "output":
-                  return "#14b8a6";
-                default:
-                  return "#64748b";
-              }
-            }}
-            style={{ background: "rgba(0,0,0,0.5)" }}
-          />
+          <div className="minimap-controls">
+            {showMiniMap && (
+              <MiniMap
+                nodeColor={(node) => {
+                  switch (node.type) {
+                    case "aiAgent":
+                      return "#6366f1";
+                    case "manualTrigger":
+                    case "scheduleTrigger":
+                      return "#22c55e";
+                    case "ifElse":
+                    case "switch":
+                    case "merge":
+                      return "#f59e0b";
+                    case "output":
+                      return "#14b8a6";
+                    default:
+                      return "#64748b";
+                  }
+                }}
+                maskColor="rgba(0, 0, 0, 0.75)"
+                style={{
+                  height: 150,
+                  width: 200,
+                  backgroundColor: "rgba(15, 15, 20, 0.8)",
+                }}
+                className="glass-minimap"
+              />
+            )}
+            <button
+              className={`minimap-toggle ${showMiniMap ? "active" : ""}`}
+              onClick={toggleMiniMap}
+              title="Toggle MiniMap"
+            >
+              🗺️
+            </button>
+          </div>
 
           {/* SVG Definitions for Markers */}
           <EdgeMarkerDefs />

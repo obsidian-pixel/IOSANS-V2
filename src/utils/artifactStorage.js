@@ -93,6 +93,28 @@ export async function getArtifact(id) {
 }
 
 /**
+ * Generates a temporary Blob URL for an artifact.
+ * Useful for <img> or <audio> src attributes.
+ * @param {string} id - The artifact ID
+ * @returns {Promise<string|null>} The blob URL or null if not found
+ */
+export async function getArtifactUrl(id) {
+  const blob = await getArtifact(id);
+  if (!blob) return null;
+  return URL.createObjectURL(blob);
+}
+
+/**
+ * Revokes a URL to free memory.
+ * @param {string} url
+ */
+export function revokeArtifactUrl(url) {
+  if (url) {
+    URL.revokeObjectURL(url);
+  }
+}
+
+/**
  * Deletes an artifact from IndexedDB.
  * @param {string} id - The UUID of the artifact to delete
  * @returns {Promise<boolean>} True if deleted, false if not found

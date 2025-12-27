@@ -7,23 +7,22 @@
 /* Base Node Container */
 .base-node {
   position: relative;
-  min-width: 200px;
-  min-height: 80px;
-  padding: var(--space-4);
-  border-radius: var(--radius-lg);
+  min-width: 240px;
+  max-width: 400px;
+  padding: 12px; /* Fixed padding for consistency */
+  border-radius: 12px; /* var(--radius-lg) */
 
   /* Glassmorphism Effect */
-  background: rgba(22, 22, 31, 0.75);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(18, 18, 24, 0.85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
 
   /* Subtle shadow */
-  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.3),
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4),
     inset 0 1px 0 rgba(255, 255, 255, 0.05);
 
-  transition: transform var(--transition-fast),
-    box-shadow var(--transition-fast), border-color var(--transition-fast);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
 }
 
 .base-node:hover {

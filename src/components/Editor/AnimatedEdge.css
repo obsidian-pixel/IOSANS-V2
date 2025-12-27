@@ -9,7 +9,7 @@
 
 .animated-edge__path {
   fill: none;
-  stroke: var(--color-primary);
+  stroke: var(--color-text-muted); /* Fallback */
   stroke-width: 2;
   stroke-linecap: round;
   stroke-linejoin: round;
@@ -71,7 +71,7 @@
 /* Glow effect for active edges */
 .animated-edge__glow {
   fill: none;
-  stroke: var(--color-primary);
+  /* Stroke set by inline style for gradient */
   stroke-width: 6;
   stroke-linecap: round;
   stroke-linejoin: round;
@@ -99,7 +99,7 @@
 .animated-edge__hitzone {
   fill: none;
   stroke: transparent;
-  stroke-width: 16;
+  stroke-width: 20; /* 10px distance on each side */
   pointer-events: stroke;
   cursor: pointer;
 }
@@ -119,4 +119,68 @@
 
 .animated-edge__marker--error {
   fill: var(--color-error);
+}
+
+/* Edge Controls - Premium Redesign */
+.edge-controls-menu {
+  display: flex;
+  gap: 8px; /* More spacing */
+  background: rgba(20, 20, 30, 0.85); /* Dark semi-transparent */
+  backdrop-filter: blur(8px);
+  padding: 6px 12px;
+  border-radius: var(--radius-full);
+  box-shadow: var(--shadow-xl), 0 0 0 1px rgba(255, 255, 255, 0.1);
+  animation: fadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  transform-origin: center center;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateY(2px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.edge-control-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-full);
+  border: none;
+  cursor: pointer;
+  font-size: 16px;
+  transition: all 0.2s ease;
+  background: transparent; /* Minimalist default */
+}
+
+/* Add Button */
+.edge-control-btn--add {
+  color: var(--color-secondary); /* Cyan */
+  background: rgba(20, 184, 166, 0.1); /* Subtle tint */
+}
+
+.edge-control-btn--add:hover {
+  background: var(--color-secondary);
+  color: #000;
+  box-shadow: 0 0 15px rgba(20, 184, 166, 0.4);
+  transform: translateY(-1px);
+}
+
+/* Delete Button */
+.edge-control-btn--delete {
+  color: var(--color-error); /* Red */
+  background: rgba(239, 68, 68, 0.1); /* Subtle tint */
+}
+
+.edge-control-btn--delete:hover {
+  background: var(--color-error);
+  color: #fff;
+  box-shadow: 0 0 15px rgba(239, 68, 68, 0.4);
+  transform: translateY(-1px);
 }

@@ -129,11 +129,29 @@ class BranchNodeExecutor extends BaseNodeExecutor {
   }
 
   async execute(context) {
-    const { inputs } = context;
-    // Pass through input to all downstream branches
+    const { inputs, nodeData, nodeId } = context;
+    const { switchKey = "type", cases = [] } = nodeData;
+
+    // Resolve value to switch on
+    let switchValue = inputs;
+    if (typeof inputs === "object" && inputs !== null && switchKey) {
+      switchValue = inputs[switchKey];
+    }
+
+    // Find matching case
+    // switchValue might be string or number, cases are usually strings
+    let activeCase = null;
+    if (cases.includes(String(switchValue))) {
+      activeCase = String(switchValue);
+    } else if (cases.includes("default")) {
+      activeCase = "default";
+    }
+
+    const activeHandles = activeCase ? [`${nodeId}-case-${activeCase}`] : [];
+
     return {
       output: inputs,
-      metadata: { type: "branch" },
+      metadata: { type: "branch", activeCase, activeHandles },
     };
   }
 }
@@ -177,32 +195,184 @@ class ConditionNodeExecutor extends BaseNodeExecutor {
 
   async execute(context) {
     const { inputs, nodeData } = context;
-    const { condition } = nodeData;
+    const { field, operator, value } = nodeData;
 
     let result = false;
+    let actualValue = inputs;
+
     try {
-      // Safe evaluation of simple conditions
-      const value = inputs.value ?? inputs;
-      if (typeof condition === "function") {
-        result = condition(value);
-      } else if (typeof condition === "string") {
-        // Simple comparisons only
-        result = Boolean(value);
+      // 1. Resolve Value
+      if (field && typeof inputs === "object") {
+        // Simple dot notation support could be added here if needed
+        actualValue = inputs[field];
+      } else if (inputs && inputs.value !== undefined) {
+        actualValue = inputs.value;
+      }
+
+      // 2. Evaluate Condition
+      if (!operator) {
+        // Fallback to truthiness
+        result = Boolean(actualValue);
+      } else {
+        switch (operator) {
+          case "equals":
+          case "==":
+            result = actualValue == value;
+            break;
+          case "notEquals":
+          case "!=":
+            result = actualValue != value;
+            break;
+          case "contains":
+            result = String(actualValue).includes(value);
+            break;
+          case "greaterThan":
+          case ">":
+            result = Number(actualValue) > Number(value);
+            break;
+          case "lessThan":
+          case "<":
+            result = Number(actualValue) < Number(value);
+            break;
+          case "regex":
+            result = new RegExp(value).test(String(actualValue));
+            break;
+          default:
+            result = false;
+        }
       }
     } catch (error) {
       console.warn("[ConditionNode] Evaluation error:", error);
+      result = false;
     }
+
+    const activeBranch = result ? "true" : "false";
+    const activeHandles = [`${context.nodeId}-${activeBranch}`];
 
     return {
       output: inputs,
       metadata: {
         type: "condition",
         result,
-        branch: result ? "true" : "false",
+        branch: activeBranch,
+        activeHandles,
       },
     };
   }
 }
+
+// Add scanConnectedTools import
+import { scanConnectedTools } from "../utils/toolSchemaGenerator.js";
+
+/**
+ * Code Executor - Javascript Sandbox (Lite)
+ */
+class CodeExecutor extends BaseNodeExecutor {
+  constructor() {
+    super("codeExecutor");
+  }
+
+  validate(context) {
+    if (!context.nodeData.code) {
+      return {
+        valid: false,
+        error: "Code is required. Open Inspector to add JavaScript.",
+      };
+    }
+    return { valid: true };
+  }
+
+  async execute(context) {
+    const { inputs, nodeData } = context;
+    const { code } = nodeData;
+
+    try {
+      // Create a function with 'inputs' available
+      const func = new Function(
+        "inputs",
+        `
+        try {
+          ${code}
+          // If code doesn't return, we try to grab 'output' var if defined, or just return inputs
+          if (typeof output !== 'undefined') return output;
+          return inputs;
+        } catch(e) { throw e; }
+      `
+      );
+
+      const result = func(inputs);
+      return {
+        output: result,
+        metadata: { type: "codeExecutor", length: code?.length || 0 },
+      };
+    } catch (error) {
+      throw new Error(`Code execution failed: ${error.message}`);
+    }
+  }
+}
+
+/**
+ * HTTP Request Executor
+ */
+class HTTPRequestNodeExecutor extends BaseNodeExecutor {
+  constructor() {
+    super("httpRequest");
+  }
+
+  validate(context) {
+    if (!context.nodeData.url) {
+      return {
+        valid: false,
+        error: "URL is required. Open Inspector to configure.",
+      };
+    }
+    return { valid: true };
+  }
+
+  async execute(context) {
+    const { inputs, nodeData } = context;
+    let { url, method = "GET", headers = {}, body } = nodeData;
+
+    if (!url) throw new Error("No URL provided");
+
+    // Template url support
+    if (url.includes("{{")) {
+      url = url.replace(/\{\{(\w+)\}\}/g, (_, k) => inputs[k] || "");
+    }
+
+    const options = {
+      method,
+      headers: { ...headers, "Content-Type": "application/json" },
+    };
+
+    if (method !== "GET" && method !== "HEAD") {
+      if (body) {
+        options.body = typeof body === "string" ? body : JSON.stringify(body);
+      } else {
+        options.body = JSON.stringify(inputs);
+      }
+    }
+
+    try {
+      const response = await fetch(url, options);
+      const data = await response
+        .json()
+        .catch(() => ({ status: response.status }));
+
+      if (!response.ok)
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+
+      return {
+        output: data,
+        metadata: { type: "httpRequest", status: response.status, url },
+      };
+    } catch (error) {
+      throw new Error(`HTTP Request failed: ${error.message}`);
+    }
+  }
+}
+
+// ... (StartNodeExecutor, EndNodeExecutor, etc remain the same) ...
 
 /**
  * LLM Node - Placeholder for LLM execution
@@ -231,6 +401,143 @@ class LLMNodeExecutor extends BaseNodeExecutor {
         model: nodeData.modelId,
       },
       metadata: { type: "llm", modelId: nodeData.modelId },
+    };
+  }
+}
+
+/**
+ * AI Agent Node - ReAct Agent with Tool Calling
+ */
+class AIAgentNodeExecutor extends BaseNodeExecutor {
+  constructor() {
+    super("aiAgent");
+  }
+
+  validate(context) {
+    if (!context.services?.webLLM) {
+      return { valid: false, error: "WebLLM service not available" };
+    }
+    if (!context.services?.toolCalling) {
+      return { valid: false, error: "ToolCallingService not available" };
+    }
+    return { valid: true };
+  }
+
+  async execute(context) {
+    const { inputs, services, setProgress, workflow, nodeId } = context;
+
+    // 1. Prepare Inputs
+    // Combine standard inputs into a user prompt/message
+    let userMessage = "";
+    if (typeof inputs === "string") {
+      userMessage = inputs;
+    } else if (inputs.prompt) {
+      userMessage = inputs.prompt;
+    } else {
+      userMessage = JSON.stringify(inputs);
+    }
+
+    if (!userMessage) userMessage = "Process this request.";
+
+    setProgress?.("Initializing Agent...", 10);
+
+    // 2. Discover Tools
+    let tools = [];
+    let toolNodeMap = new Map();
+
+    if (workflow && workflow.nodes && workflow.edges) {
+      // Find the node instance to pass to scanner
+      const nodeInstance = workflow.nodes.find((n) => n.id === nodeId);
+      if (nodeInstance) {
+        tools = scanConnectedTools(
+          nodeInstance,
+          workflow.edges,
+          workflow.nodes
+        );
+
+        // Map generated tool names to Node IDs for execution
+        // scanConnectedTools returns schemas. We need to find which node produced which schema.
+        // Actually, scanConnectedTools is a bit opaque. Let's make it easier:
+        // We can iterate the connected nodes manually or trust the naming convention.
+        // The generator names them `${type}_${id}`.
+
+        // Let's refine the map building.
+        // We can re-scan or rely on the name.
+        tools.forEach((tool) => {
+          // Name format: type_uuid_parts
+          // This is fragile if ID contains underscores. UUIDs use hyphens.
+          // Better: Modify scanConnectedTools to return metadata or handle map building there.
+          // For now, let's look for the node that has a matching ID in the name?
+          // Or just Iterate edges again here to be safe.
+
+          workflow.edges
+            .filter(
+              (e) => e.target === nodeId && e.targetHandle?.includes("resource")
+            )
+            .forEach((edge) => {
+              const source = workflow.nodes.find((n) => n.id === edge.source);
+              if (source && tool.name.includes(source.id.replace(/-/g, "_"))) {
+                toolNodeMap.set(tool.name, source.id);
+              }
+            });
+        });
+      }
+    }
+
+    // 3. Configure Tool Service
+    services.toolCalling.setTools(
+      tools,
+      toolNodeMap,
+      // Execute Node Callback
+      async (targetNodeId, toolInput) => {
+        // We use the Engine's imperative executeNode
+        // We must pass the 'services' to the tool node as well
+        return await services.executionEngine.executeNode(
+          targetNodeId,
+          toolInput,
+          { services }
+        );
+      }
+    );
+
+    // 4. Run ReAct Loop
+    setProgress?.("Agent Thinking...", 30);
+
+    const result = await services.toolCalling.runReActLoop(userMessage, {
+      onStep: (step) => {
+        // Log full detail to execution logs
+        if (context.log) {
+          if (step.type === "thought") {
+            context.log(step.content, "info"); // Log full thought
+          } else if (step.type === "action") {
+            context.log(
+              `Action: ${step.toolCall.name}(${JSON.stringify(
+                step.toolCall.input
+              )})`,
+              "action"
+            );
+          }
+        }
+
+        // Update UI progress status (brief)
+        if (step.type === "thought") {
+          setProgress?.(`Thinking...`, 50);
+        } else if (step.type === "action") {
+          setProgress?.(`Calling tool: ${step.toolCall.name}...`, 70);
+        }
+      },
+    });
+
+    return {
+      output: {
+        response: result.answer,
+        trace: result.steps,
+      },
+      metadata: {
+        type: "aiAgent",
+        toolCount: tools.length,
+        steps: result.steps.length,
+      },
     };
   }
 }
@@ -285,6 +592,16 @@ class PythonNodeExecutor extends BaseNodeExecutor {
   constructor() {
     super("python");
     this.pyodide = null;
+  }
+
+  validate(context) {
+    if (!context.nodeData.code) {
+      return {
+        valid: false,
+        error: "Python code is required. Open Inspector to add script.",
+      };
+    }
+    return { valid: true };
   }
 
   async _loadPyodide() {
@@ -365,6 +682,19 @@ class TextToSpeechNodeExecutor extends BaseNodeExecutor {
     super("textToSpeech");
   }
 
+  validate(context) {
+    const { inputs, nodeData } = context;
+    const text =
+      typeof inputs === "string" ? inputs : inputs?.text || nodeData.text;
+    if (!text) {
+      return {
+        valid: false,
+        error: "Missing text: Connect a text input or set 'Text' in Inspector.",
+      };
+    }
+    return { valid: true };
+  }
+
   async execute(context) {
     const { inputs, nodeData, services } = context;
     const text =
@@ -372,7 +702,9 @@ class TextToSpeechNodeExecutor extends BaseNodeExecutor {
     const { voice, rate, pitch } = nodeData;
 
     if (!text) {
-      throw new Error("No text provided for speech synthesis");
+      throw new Error(
+        "Missing text: Configure 'Text' in the Inspector or connect a text output."
+      );
     }
 
     // Use Web Speech API to generate audio
@@ -845,11 +1177,11 @@ registerExecutor("imageGeneration", new ImageGenerationNodeExecutor());
 // Register UI node type aliases (Dashboard nodes)
 registerExecutor("manualTrigger", new StartNodeExecutor()); // Manual trigger = start node
 registerExecutor("scheduleTrigger", new StartNodeExecutor()); // Schedule trigger = start node
-registerExecutor("aiAgent", new LLMNodeExecutor()); // AI Agent uses LLM executor
+registerExecutor("aiAgent", new AIAgentNodeExecutor()); // AI Agent uses Agent executor
 registerExecutor("ifElse", new ConditionNodeExecutor()); // IfElse = condition
 registerExecutor("switch", new BranchNodeExecutor()); // Switch = branch
-registerExecutor("codeExecutor", new PythonNodeExecutor()); // Code = Python executor
-registerExecutor("httpRequest", new TransformNodeExecutor()); // HTTP = transform for now
+registerExecutor("codeExecutor", new CodeExecutor()); // JS Code Executor
+registerExecutor("httpRequest", new HTTPRequestNodeExecutor()); // HTTP Request Executor
 registerExecutor("output", new EndNodeExecutor()); // Output = end node
 registerExecutor("base", new TransformNodeExecutor()); // Base node passthrough
 

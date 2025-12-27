@@ -141,3 +141,36 @@
     opacity: 0.6;
   }
 }
+
+/* New Log Styles */
+.execution-panel__entry--info {
+  border-left: 3px solid var(--color-secondary);
+}
+
+.execution-panel__entry--action {
+  border-left: 3px solid var(--color-warning); /* Orange/Yellow */
+}
+
+.entry-content-wrapper {
+  flex: 1 1 100%;
+  padding-left: 24px;
+  margin-top: 4px;
+}
+
+.entry-message {
+  color: var(--color-text-primary);
+  line-height: 1.4;
+  word-break: break-word;
+}
+
+.entry-data {
+  margin-top: 4px;
+  font-family: var(--font-family-mono);
+  font-size: 10px;
+  color: var(--color-text-muted);
+  background: rgba(0, 0, 0, 0.2);
+  padding: 4px;
+  border-radius: 4px;
+  overflow-x: auto;
+  white-space: pre-wrap;
+}

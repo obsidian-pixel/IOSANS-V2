@@ -11,7 +11,17 @@
   overflow: hidden;
 }
 
-/* Top Bar */
+@keyframes pulse {
+  0% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.6;
+  }
+  100% {
+    opacity: 1;
+  }
+}
 .dashboard__topbar {
   display: flex;
   align-items: center;
@@ -75,21 +85,6 @@
   border-color: var(--color-primary);
 }
 
-.topbar__btn--run {
-  background: var(--color-success);
-  border-color: var(--color-success);
-  color: white;
-}
-
-.topbar__btn--run:hover {
-  background: var(--color-success-hover);
-}
-
-.topbar__btn--run.running {
-  background: var(--color-error);
-  border-color: var(--color-error);
-}
-
 /* Main Content */
 .dashboard__content {
   display: flex;
@@ -103,30 +98,142 @@
   position: relative;
 }
 
-/* Right Panel */
+/* Right Panel - Solid Sidebar Design */
 .dashboard__panel {
-  width: 320px;
+  width: 350px; /* Expanded Width */
   display: flex;
   flex-direction: column;
+  position: relative;
+
+  /* Sidebar Style - Attached to edges */
+  margin: 0;
   border-left: 1px solid var(--color-surface-border);
-  background: var(--color-surface);
+  background: var(--color-surface); /* Solid background */
+
+  /* Collapse Logic */
+  transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: hidden;
+  z-index: 20; /* Ensure above canvas if needed, though flex layout handles it */
+}
+
+.dashboard__panel.collapsed {
+  width: 50px; /* Collapsed Bar Width */
+  background: var(--color-background-secondary); /* Slightly darker for bar */
+}
+
+/* Hide internal content when collapsed */
+.dashboard__panel.collapsed .panel__tabs,
+.dashboard__panel.collapsed .panel__content {
+  opacity: 0;
+  pointer-events: none;
+  display: none; /* Hide via display to remove from flow after transition? No, opacity/pointer-events allows smooth width transition. */
+}
+/* Actually, for width transition, if we keep them in flow, they might squash.
+   Let's absolute position them or use a wrapper? 
+   Simple fix: toggle display after transition or use opacity + overflow hidden (already on panel). 
+   With overflow hidden, squashed content won't show.
+*/
+
+.panel-collapse-btn {
+  /* Position top-left or top-center of panel */
+  width: 100%;
+  height: 50px; /* Match height of thin bar */
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  background: transparent;
+  border: none;
+  color: var(--color-text-secondary);
+  font-size: 20px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  z-index: 50;
+  border-bottom: 1px solid transparent;
+}
+
+.panel-collapse-btn:hover {
+  color: var(--color-text-primary);
+  background: var(--color-surface-hover);
+}
+
+/* When Expanded: Position the toggle button as a "Close" or "Menu" button? 
+   User image shows expanded panel has 'X' on right.
+   We can move this button to top-right when expanded?
+   Or keep it top-left as a hamburger.
+   Actually, if I make it "width: 100%" when collapsed, it fills the bar.
+   When expanded, it should probably be a small button.
+*/
+
+.dashboard__panel:not(.collapsed) .panel-collapse-btn {
+  /* Position top-left when expanded */
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: auto;
+  width: 50px; /* Exact square match with collapsed width */
+  height: 50px;
+  border-radius: 0; /* Flush with header */
+  margin: 0;
+
+  background: transparent;
+  color: var(--color-text-muted);
+
+  /* Separator */
+  border-right: 1px solid var(--color-surface-border);
+}
+
+/* Specific Hover for Expanded State */
+.dashboard__panel:not(.collapsed) .panel-collapse-btn:hover {
+  background: var(--color-surface-hover);
+  color: var(--color-text-primary);
+}
+
+/* Force Icon Size to prevent collapse */
+.panel-collapse-btn svg {
+  width: 24px !important;
+  height: 24px !important;
+  min-width: 24px;
+  min-height: 24px;
+  stroke: currentColor;
 }
 
 .panel__tabs {
-  display: flex;
+  padding: 0;
+  padding-left: 50px; /* Make room for the button on the left */
+  gap: 0;
+  background: var(--color-surface);
   border-bottom: 1px solid var(--color-surface-border);
+  border-radius: 0;
+
+  height: 50px; /* Exact height match */
+  max-height: 50px;
+
+  min-width: 350px; /* Prevent squashing during collapse */
+  display: flex;
+  margin-right: 0; /* Remove right margin */
 }
 
 .panel__tabs button {
   flex: 1;
-  padding: var(--space-3);
-  background: none;
+  padding: 0 16px; /* Horizontal padding only */
+  height: 100%; /* Fill header height */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  background: transparent;
   border: none;
+  border-radius: 0;
   border-bottom: 2px solid transparent;
+
   color: var(--color-text-secondary);
-  font-size: var(--font-size-sm);
+  font-size: 13px;
+  font-weight: 500;
   cursor: pointer;
-  transition: all var(--transition-fast);
+  transition: all 0.2s;
+  position: relative;
 }
 
 .panel__tabs button:hover {
@@ -136,12 +243,37 @@
 
 .panel__tabs button.active {
   color: var(--color-primary);
+  background: transparent;
+  box-shadow: none;
   border-bottom-color: var(--color-primary);
+}
+
+.panel__tabs button.active::after {
+  display: none; /* Remove glimmer */
 }
 
 .panel__content {
   flex: 1;
-  overflow: hidden;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 0;
+  min-width: 350px;
+  border-radius: 0;
+}
+
+/* Scrollbar Styling for Panel */
+.panel__content::-webkit-scrollbar {
+  width: 6px;
+}
+.panel__content::-webkit-scrollbar-track {
+  background: transparent;
+}
+.panel__content::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 3px;
+}
+.panel__content::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.2);
 }
 
 /* Context Menu */
@@ -199,10 +331,255 @@
 }
 
 .react-flow__minimap {
-  border-radius: var(--radius-md);
-  border: 1px solid var(--color-surface-border);
+  /* Override default positioning logic handled by container */
+  margin: 0 !important;
+  background: transparent !important; /* Managed by style prop or override */
+}
+
+/* Internal SVG Nodes */
+.react-flow__minimap-node {
+  rx: 4;
+  ry: 4;
+  fill-opacity: 0.8 !important;
+  stroke: none !important;
+}
+
+.react-flow__minimap-mask {
+  fill: rgba(0, 0, 0, 0.6) !important;
 }
 
 .react-flow__attribution {
   display: none;
+}
+
+/* Premium MiniMap Styling & Controls */
+.minimap-controls {
+  position: absolute;
+  bottom: 20px;
+  right: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 12px;
+  z-index: 5;
+  pointer-events: none; /* Let clicks pass through container frame */
+}
+
+.minimap-controls > * {
+  pointer-events: all; /* Re-enable pointer for children */
+}
+
+/* Target the MiniMap specifically with high specificity */
+.sovereign-minimap {
+  position: absolute !important;
+  /* Reset library positioning */
+  bottom: 10px !important;
+  right: 10px !important;
+  left: auto !important;
+  top: auto !important;
+
+  background: rgba(20, 20, 30, 0.85) !important;
+  backdrop-filter: blur(12px);
+  border-radius: 12px !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5) !important;
+
+  /* Animation Base State */
+  transform-origin: bottom right;
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); /* Faster pop effect */
+  opacity: 1;
+  transform: scale(1) translate(0, 0) !important;
+
+  z-index: 0 !important;
+  margin: 0 !important;
+  pointer-events: all !important;
+}
+
+/* Closed State - Animate Out */
+.minimap-controls.closed .sovereign-minimap {
+  opacity: 0 !important;
+  transform: scale(0.5) translate(50px, 50px) !important; /* Shrink into button */
+  pointer-events: none !important;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); /* Quick snap exit */
+}
+
+/* Hover Effect (only when open) */
+.minimap-controls.open .sovereign-minimap:hover {
+  border-color: rgba(99, 102, 241, 0.4) !important;
+  transform: scale(1.02) !important;
+}
+
+/* Toggle Button */
+.minimap-toggle {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  background: rgba(20, 20, 30, 0.85);
+  backdrop-filter: blur(8px);
+  z-index: 10 !important; /* Stack on top of map */
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.minimap-toggle:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--color-text-primary);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.4);
+}
+
+.minimap-toggle.active {
+  color: var(--color-primary);
+  border-color: rgba(99, 102, 241, 0.3);
+}
+
+/* Canvas Actions */
+/* Canvas Panel Container */
+.canvas-panel-container {
+  display: flex;
+  flex-direction: column;
+  gap: 25px; /* Spacing between actions and controls */
+  margin-left: 15px;
+  margin-bottom: 15px;
+  pointer-events: none; /* Let clicks pass through container */
+}
+
+/* Groups */
+.canvas-actions,
+.canvas-controls {
+  display: flex;
+  flex-direction: column;
+  background: var(--color-surface);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-surface-border);
+  box-shadow: var(--shadow-sm);
+  overflow: visible; /* Allow tooltips to show */
+  pointer-events: auto; /* Re-enable clicks */
+}
+
+.canvas-btn {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-surface);
+  border: none;
+  border-bottom: 1px solid var(--color-surface-border);
+  color: var(--color-text-secondary);
+  font-size: 14px;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  padding: 0; /* Ensure no internal padding adds to size */
+  border-radius: 0;
+  position: relative; /* For tooltip positioning */
+}
+
+/* First/Last child radius fixes */
+.canvas-actions .canvas-btn:first-child,
+.canvas-controls .canvas-btn:first-child {
+  border-top-left-radius: var(--radius-md);
+  border-top-right-radius: var(--radius-md);
+}
+
+.canvas-actions .canvas-btn:last-child,
+.canvas-controls .canvas-btn:last-child {
+  border-bottom: none;
+  border-bottom-left-radius: var(--radius-md);
+  border-bottom-right-radius: var(--radius-md);
+}
+
+.canvas-btn:hover {
+  background: var(--color-surface-hover);
+  color: var(--color-text-primary);
+  z-index: 10; /* Keep button above tooltip */
+}
+
+.canvas-btn.active {
+  color: var(--color-primary);
+  background: var(--color-surface);
+}
+
+.canvas-btn--run {
+  color: var(--color-success);
+}
+
+.canvas-btn--run:hover {
+  background: var(--color-surface-hover);
+}
+
+.canvas-btn--run.running {
+  color: var(--color-error);
+  animation: pulse 2s infinite;
+}
+
+.canvas-btn--zoom-display {
+  font-size: 10px;
+  font-weight: 600;
+  /* Width inherited from .canvas-btn */
+  letter-spacing: -0.5px;
+}
+
+/* Animated Tooltips */
+.canvas-btn[data-tooltip]::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  left: 100%;
+  top: 0;
+  height: 100%; /* Match button height */
+  display: flex;
+  align-items: center;
+
+  /* Start hidden/tucked */
+  transform: translateX(-15px);
+
+  background: #0f172a; /* Slate 900 - Premium Dark */
+  color: #f8fafc; /* Slate 50 - Crisp White */
+  padding: 0 12px;
+
+  /* Premium Borders */
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-left: none; /* Seamless attachment */
+  border-radius: 0 4px 4px 0;
+
+  /* Typography */
+  font-family: "Inter", system-ui, -apple-system, sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+
+  opacity: 0;
+  pointer-events: none;
+
+  /* Premium Motion */
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+
+  margin-left: -1px; /* Slight overlap */
+  box-shadow: 4px 0 12px rgba(0, 0, 0, 0.25);
+  z-index: -1;
+}
+
+.canvas-btn[data-tooltip]:hover::after {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+@keyframes pulse {
+  0% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.6;
+  }
+  100% {
+    opacity: 1;
+  }
 }

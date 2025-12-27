@@ -7,6 +7,7 @@
 import { getExecutor } from "./NodeExecutors.js";
 import useExecutionStore from "../store/executionStore.js";
 import useWorkflowStore from "../store/workflowStore.js";
+import useUIStore from "../store/uiStore.js";
 
 /**
  * @typedef {Object} ExecutionOptions
@@ -57,6 +58,7 @@ class ExecutionEngine {
     try {
       // Execute from start nodes
       const results = await this._executeLevel(startNodes, graph, {
+        workflow: { nodes, edges }, // Pass raw workflow for tools
         services,
         signal,
         onNodeStart,
@@ -79,6 +81,45 @@ class ExecutionEngine {
     if (this.abortController) {
       this.abortController.abort();
     }
+  }
+
+  /**
+   * Executes a single node imperatively (for Tool Calling)
+   * @param {string} nodeId
+   * @param {Object} inputs
+   * @param {Object} options
+   * @returns {Promise<Object>}
+   */
+  async executeNode(nodeId, inputs, options = {}) {
+    // We need to fetch the node definition.
+    // We assume the store has the latest state.
+    const { nodes } = useWorkflowStore.getState();
+    const node = nodes.find((n) => n.id === nodeId);
+    if (!node) throw new Error(`Node ${nodeId} not found`);
+
+    const executor = getExecutor(node.type);
+    if (!executor) throw new Error(`Executor for ${node.type} not found`);
+
+    const context = {
+      inputs,
+      nodeData: node.data || {},
+      nodeId,
+      services: options.services || {},
+      signal: this.abortController?.signal,
+      // We might not have a graph here if running isolated,
+      // but tools usually don't need full graph unless recursive.
+    };
+
+    // Validate
+    const validation = executor.validate(context);
+    if (!validation.valid) throw new Error(validation.error);
+
+    // Execute
+    // We do NOT update the main execution store here to avoid state collisions
+    // with the main graph flow, unless we want to visualize it?
+    // For now, let's just return the result.
+    const result = await executor.execute(context);
+    return result.output;
   }
 
   /**
@@ -140,6 +181,12 @@ class ExecutionEngine {
       throw new Error("Execution aborted");
     }
 
+    // Check Pause
+    while (useExecutionStore.getState().isPaused) {
+      if (signal?.aborted) throw new Error("Execution aborted");
+      await new Promise((resolve) => setTimeout(resolve, 200));
+    }
+
     // Group nodes by their dependencies for parallel execution
     const results = new Map();
 
@@ -173,15 +220,39 @@ class ExecutionEngine {
       try {
         onNodeStart?.(nodeId);
         executionStore.setNodeRunning(nodeId);
+        executionStore.addLog({
+          nodeId,
+          type: "info",
+          content: "Started execution",
+        });
 
         const executionContext = {
           inputs,
           nodeData: node.data || {},
-          services: context.services,
+          nodeId, // Pass ID for tool scanning
+          services: {
+            ...context.services,
+            executionEngine: this, // Pass engine for callbacks
+          },
+          graph: {
+            // Pass graph structure for traversal tools
+            nodes: Array.from(graph.values()).map((e) => e.node),
+            edges: Array.from(graph.values()).flatMap((e) => e.incomingEdges), // Approximation or pass raw edges?
+            // Better: pass the raw 'nodes' and 'edges' arrays from 'processGraph' context?
+            // Since we didn't store them in 'context' passed to _executeLevel, we can't easily.
+            // Let's add 'workflow' to 'context' in executeGraph.
+          },
+          workflow: context.workflow, // { nodes, edges }
           signal,
+          log: (content, type = "info") =>
+            executionStore.addLog({ nodeId, type, content }),
+          setContent: (content) => {
+            // Optional: Update node data/display live?
+          },
           // eslint-disable-next-line no-unused-vars
-          setProgress: (_status, _progress) => {
-            // TODO: Update progress through store
+          setProgress: (status, progress) => {
+            // Update progress through log for now
+            executionStore.addLog({ nodeId, type: "info", content: status });
           },
         };
 
@@ -196,6 +267,13 @@ class ExecutionEngine {
 
         // Store result
         executionStore.setNodeSuccess(nodeId, result.output);
+        executionStore.addLog({
+          nodeId,
+          type: "success",
+          content: "Completed successfully",
+          data: result.output,
+        });
+
         results.set(nodeId, result.output);
 
         // Store edge snapshots for downstream edges
@@ -211,7 +289,37 @@ class ExecutionEngine {
         onNodeComplete?.(nodeId, result);
 
         // Execute downstream nodes
-        const downstreamIds = Array.from(entry.outgoing);
+        let downstreamIds = Array.from(entry.outgoing);
+
+        // Filter for Conditional Logic (Switch / IfElse)
+        if (downstreamIds.length > 0) {
+          const { metadata } = result;
+
+          // logic for filtering based on active handles
+          if (
+            metadata?.activeHandles &&
+            Array.isArray(metadata.activeHandles)
+          ) {
+            // Filter edges that match the active handles
+            downstreamIds = downstreamIds.filter((targetId) => {
+              // We need access to OUTGOING edges. entry.outgoing is just a Set of IDs.
+              // The graph structure in _buildExecutionGraph puts incomingEdges on target.
+              // So to find the edge connecting Current -> Target:
+              const targetEntry = graph.get(targetId);
+              const connectingEdge = targetEntry?.incomingEdges.find(
+                (e) => e.source === nodeId
+              );
+
+              if (connectingEdge) {
+                return metadata.activeHandles.includes(
+                  connectingEdge.sourceHandle
+                );
+              }
+              return false;
+            });
+          }
+        }
+
         if (downstreamIds.length > 0) {
           await this._executeLevel(downstreamIds, graph, context);
         }
@@ -219,6 +327,20 @@ class ExecutionEngine {
         return result;
       } catch (error) {
         executionStore.setNodeError(nodeId, error);
+
+        // Toast for Runtime Error
+        useUIStore.getState().addToast({
+          message: `[${nodeType}] Failed: ${error.message}`,
+          type: "error",
+        });
+
+        // Log for Runtime Error
+        executionStore.addLog({
+          nodeId,
+          type: "error",
+          content: error.message,
+        });
+
         onNodeError?.(nodeId, error);
         throw error;
       }
@@ -255,8 +377,19 @@ class ExecutionEngine {
       }
     });
 
-    // Merge node fires only when ALL upstream branches complete
-    const ready = completedCount === incomingCount;
+    // Strategy Check
+    const strategy = entry.node.data.mergeStrategy || "object"; // Default to wait-all
+
+    // If strategy is 'first' (race), we are ready if ANY input is here.
+    // Note: This might cause multiple executions if multiple inputs arrive at different times.
+    // For proper 'Race' (run once), we'd need state to know we already ran.
+    // But ExecutionEngine restarts check every level.
+
+    let ready = completedCount === incomingCount; // Default Wait All
+
+    if (strategy === "first" || strategy === "race") {
+      ready = completedCount > 0;
+    }
 
     return { ready, completedCount, totalRequired: incomingCount };
   }

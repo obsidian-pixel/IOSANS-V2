@@ -12,7 +12,7 @@ function ExecutionPanel() {
   const logRef = useRef(null);
 
   const isRunning = useExecutionStore((state) => state.isRunning);
-  const nodeResults = useExecutionStore((state) => state.nodeResults);
+  const logs = useExecutionStore((state) => state.logs);
   const duration = useExecutionStore((state) => state.getExecutionDuration());
 
   // Auto-scroll to bottom on new logs
@@ -20,31 +20,29 @@ function ExecutionPanel() {
     if (logRef.current) {
       logRef.current.scrollTop = logRef.current.scrollHeight;
     }
-  }, [nodeResults]);
+  }, [logs]);
 
   const formatTime = (timestamp) => {
     return new Date(timestamp).toLocaleTimeString();
   };
 
-  const getStatusIcon = (status) => {
-    switch (status) {
+  const getStatusIcon = (type) => {
+    switch (type) {
       case "running":
-        return "⏳";
+      case "info":
+        return "ℹ️";
       case "success":
         return "✅";
       case "error":
         return "❌";
+      case "action":
+        return "🛠️";
       case "pending":
-        return "⏸️";
+        return "⏳";
       default:
         return "○";
     }
   };
-
-  const logs = Array.from(nodeResults.entries()).map(([nodeId, result]) => ({
-    nodeId,
-    ...result,
-  }));
 
   return (
     <div className="execution-panel">
@@ -65,33 +63,35 @@ function ExecutionPanel() {
             Click <strong>Run</strong> to execute the workflow.
           </div>
         ) : (
-          logs.map((log, index) => (
+          logs.map((log) => (
             <div
-              key={`${log.nodeId}-${index}`}
-              className={`execution-panel__entry execution-panel__entry--${log.status}`}
+              key={log.id}
+              className={`execution-panel__entry execution-panel__entry--${log.type}`}
             >
-              <span className="entry-icon">{getStatusIcon(log.status)}</span>
-              <span className="entry-node">{log.nodeId.slice(0, 8)}</span>
-              <span className="entry-status">{log.status}</span>
-              {log.timestamp && (
-                <span className="entry-time">{formatTime(log.timestamp)}</span>
+              <span className="entry-icon">{getStatusIcon(log.type)}</span>
+              <span className="entry-time">{formatTime(log.timestamp)}</span>
+              {log.nodeId && (
+                <span className="entry-node">[{log.nodeId.slice(0, 8)}]</span>
               )}
-              {log.error && (
-                <div className="entry-error">
-                  {log.error.message || log.error}
-                </div>
-              )}
-              {log.output && log.status === "success" && (
-                <div className="entry-output">
-                  {typeof log.output === "object" && log.output.artifactId ? (
-                    <span className="artifact-ref">
-                      📎 {log.output.artifactId.slice(0, 8)}...
-                    </span>
-                  ) : (
-                    <code>{JSON.stringify(log.output).slice(0, 100)}</code>
-                  )}
-                </div>
-              )}
+              <div className="entry-content-wrapper">
+                <div className="entry-message">{log.content}</div>
+                {log.data && (
+                  <div className="entry-data">
+                    {typeof log.data === "object" && log.data.artifactId ? (
+                      <span className="artifact-ref">
+                        📎 Artifact: {log.data.artifactId.slice(0, 8)}...
+                      </span>
+                    ) : (
+                      <code>
+                        {typeof log.data === "object"
+                          ? JSON.stringify(log.data).slice(0, 200) +
+                            (JSON.stringify(log.data).length > 200 ? "..." : "")
+                          : String(log.data).slice(0, 200)}
+                      </code>
+                    )}
+                  </div>
+                )}
+              </div>
             </div>
           ))
         )}
