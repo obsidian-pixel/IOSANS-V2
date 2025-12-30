@@ -34,7 +34,12 @@ export function TemplatesPanel() {
             <div
               key={t.id}
               className="node-sidebar__node"
-              style={{ cursor: "pointer" }}
+              draggable
+              onDragStart={(e) => {
+                e.dataTransfer.setData("application/reactflow-template", t.id);
+                e.dataTransfer.effectAllowed = "copy";
+              }}
+              style={{ cursor: "grab" }}
               onClick={() => handleLoad(t)}
               title={t.description}
             >

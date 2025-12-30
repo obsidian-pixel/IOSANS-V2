@@ -245,27 +245,87 @@ function Dashboard() {
   const onDrop = useCallback(
     (event) => {
       event.preventDefault();
-      const type = event.dataTransfer.getData("application/reactflow");
-      const label = event.dataTransfer.getData("application/nodeLabel") || type;
-
-      if (!type) return;
 
       const position = screenToFlowPosition({
         x: event.clientX,
         y: event.clientY,
       });
 
-      const newNode = {
-        id: `${type}-${Date.now()}`,
-        type,
-        position,
-        data: { label },
-      };
+      // 1. Handle Single Node Drop
+      const type = event.dataTransfer.getData("application/reactflow");
+      if (type) {
+        constlabel =
+          event.dataTransfer.getData("application/nodeLabel") || type;
+        const newNode = {
+          id: `${type}-${Date.now()}`,
+          type,
+          position,
+          data: { label },
+        };
+        setNodes((nds) => [...nds, newNode]);
+        addNode(newNode);
+        return;
+      }
 
-      setNodes((nds) => [...nds, newNode]);
-      addNode(newNode);
+      // 2. Handle Template Drop
+      const templateId = event.dataTransfer.getData(
+        "application/reactflow-template"
+      );
+      if (templateId) {
+        // Dynamic import or internal lookup (Assuming TEMPLATES is available or passed)
+        // We'll import it at the top or use a simple lookup if already imported.
+        // For now, let's assume we need to import it or it's globally available.
+        // Quick fix: Import TEMPLATES at top of file, or better, pass handleDropTemplate prop if this gets complex.
+        // Actually, let's look it up from the imported data file directly in the callback.
+        // We need to add `import { TEMPLATES } from "./data/flowTemplates.js";` at top.
+
+        import("./data/flowTemplates.js").then(({ TEMPLATES }) => {
+          const template = TEMPLATES.find((t) => t.id === templateId);
+          if (!template) return;
+
+          // Calculate center of template to align with mouse
+          const xs = template.nodes.map((n) => n.position.x);
+          const ys = template.nodes.map((n) => n.position.y);
+          const minX = Math.min(...xs);
+          const minY = Math.min(...ys);
+          const centerX = (Math.max(...xs) - minX) / 2;
+          const centerY = (Math.max(...ys) - minY) / 2;
+
+          // Generate unique suffix for this instance
+          const timestamp = Date.now();
+          const idMap = {};
+
+          const newNodes = template.nodes.map((n) => {
+            const newId = `${n.id}-${timestamp}`;
+            idMap[n.id] = newId; // Map old ID to new ID
+            return {
+              ...n,
+              id: newId,
+              position: {
+                x: position.x + (n.position.x - minX - centerX),
+                y: position.y + (n.position.y - minY - centerY),
+              },
+              selected: false,
+            };
+          });
+
+          const newEdges = template.edges.map((e) => ({
+            ...e,
+            id: `${e.id}-${timestamp}`,
+            source: idMap[e.source],
+            target: idMap[e.target],
+          }));
+
+          setNodes((nds) => [...nds, ...newNodes]);
+          setEdges((eds) => [...eds, ...newEdges]);
+
+          // Sync to store
+          newNodes.forEach(addNode);
+          // newEdges.forEach(addEdgeStore); // Store currently syncs edges via useEffect, so acceptable.
+        });
+      }
     },
-    [addNode, setNodes, screenToFlowPosition]
+    [addNode, setNodes, setEdges, screenToFlowPosition]
   );
 
   // ... context menu handlers (unchanged)

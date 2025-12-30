@@ -12,12 +12,22 @@ export const TEMPLATES = [
         data: { label: "Start" },
       },
       {
+        id: "model-1",
+        type: "llm",
+        position: { x: 600, y: -50 }, // Position above Agent
+        data: {
+          label: "Llama-3 Model",
+          modelId: "Llama-3-8B-Instruct-q4f32_1", // Default to a standard model
+          temperature: 0.7,
+        },
+      },
+      {
         id: "prompt-1",
         type: "codeExecutor",
         position: { x: 300, y: 150 },
         data: {
           label: "Define Topic",
-          code: `// Return the topic for the story\nreturn "Write a short, engaging story about a brave toaster who saves breakfast.";`,
+          code: `// Return the topic for the story\nreturn { prompt: "Write a short, engaging story about a brave toaster who saves breakfast." };`,
         },
       },
       {
@@ -28,13 +38,13 @@ export const TEMPLATES = [
           label: "Story Writer",
           systemPrompt:
             "You are a creative storyteller. Write a very short story (max 100 words) based on the user topic.",
-          modelId: "llama-3-8b",
+          // Model is now connected via handle
         },
       },
       {
         id: "tts-1",
         type: "textToSpeech",
-        position: { x: 300, y: 400 },
+        position: { x: 900, y: 150 }, // Moving to right for better flow
         data: {
           label: "Narrator",
           voice: "en-US-Neural2-F",
@@ -43,7 +53,7 @@ export const TEMPLATES = [
       {
         id: "out-1",
         type: "output",
-        position: { x: 600, y: 400 },
+        position: { x: 1200, y: 150 },
         data: { label: "Audio Player" },
       },
     ],
@@ -56,6 +66,14 @@ export const TEMPLATES = [
         targetHandle: "target",
         type: "animated",
         animated: true,
+      },
+      {
+        id: "e-model",
+        source: "model-1",
+        target: "agent-1",
+        sourceHandle: "source", // LLM output
+        targetHandle: "model", // Agent Top Handle
+        type: "default",
       },
       {
         id: "e2",

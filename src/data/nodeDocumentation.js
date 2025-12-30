@@ -46,7 +46,8 @@ Let's build a simple "Hello World" flow to understand the basics.
   triggersGuide: {
     title: "Triggers & Events",
     category: "Guide",
-    description: "The heartbeat of your automation. How execution begins and propagates.",
+    description:
+      "The heartbeat of your automation. How execution begins and propagates.",
     isGuide: true,
     content: `
 ### The "Signal" Concept
@@ -71,7 +72,8 @@ Yes! You can connect multiple triggers to the same Action.
   aiAgentsGuide: {
     title: "AI Agents",
     category: "Guide",
-    description: "Mastering the ReAct Loop (Reasoning + Acting) with Local LLMs.",
+    description:
+      "Mastering the ReAct Loop (Reasoning + Acting) with Local LLMs.",
     isGuide: true,
     content: `
 ### The Brain: AI Agent Node
@@ -138,7 +140,7 @@ IOSANS embeds **Pyodide**, a port of CPython to WebAssembly.
 - **Limitations**: No raw socket access (no \`requests\` library). You must use JavaScript fetch (via the HTTP Node) or Pyodide's specific fetch wrappers.
 
 ### Standard Library
-Most of the Python standard library is available: `math`, `random`, `datetime`, `json`, `re`.
+Most of the Python standard library is available: \`math\`, \`random\`, \`datetime\`, \`json\`, \`re\`.
 
 ### External Packages (Micropip)
 Pyodide supports pure-python wheels.
@@ -187,7 +189,7 @@ Pyodide supports pure-python wheels.
       {
         title: "Testing User Input",
         description:
-          "Simulate a user submitting a form by adding `{\"name\": \"Alice\", \"email\": \"alice@example.com\"}` to the test payload.",
+          'Simulate a user submitting a form by adding `{"name": "Alice", "email": "alice@example.com"}` to the test payload.',
         code: `{"name": "Alice"}`,
       },
     ],
@@ -219,18 +221,15 @@ Pyodide supports pure-python wheels.
     configuration: [
       {
         name: "Mode",
-        description:
-          "Simple (Presets) or Advanced (Cron Expression).",
+        description: "Simple (Presets) or Advanced (Cron Expression).",
       },
       {
         name: "Interval / Cron",
-        description:
-          "The timing rule. E.g., '15' (minutes) or '*/15 * * * *'.",
+        description: "The timing rule. E.g., '15' (minutes) or '*/15 * * * *'.",
       },
       {
         name: "active",
-        description:
-          "Master switch. If OFF, the schedule is ignored.",
+        description: "Master switch. If OFF, the schedule is ignored.",
       },
     ],
     examples: [
@@ -342,7 +341,8 @@ Pyodide supports pure-python wheels.
       {
         id: "case-X",
         label: "Case Handles (Right)",
-        description: "One handle per defined case. Only the matching handle fires.",
+        description:
+          "One handle per defined case. Only the matching handle fires.",
       },
     ],
     configuration: [
@@ -395,8 +395,7 @@ Pyodide supports pure-python wheels.
     configuration: [
       {
         name: "Expected Branches",
-        description:
-          "The exact Integer number of input signals to wait for.",
+        description: "The exact Integer number of input signals to wait for.",
       },
     ],
     examples: [
